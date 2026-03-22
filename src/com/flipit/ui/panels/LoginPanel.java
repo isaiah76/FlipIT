@@ -8,17 +8,17 @@ import java.awt.*;
 public class LoginPanel extends JPanel {
     private JPanel rootPanel;
     private JPanel cardPanel;
-    private JPanel logoRow;
+    private JPanel header;
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JLabel errorLabel;
     private JButton loginBtn;
-    private JPanel linkRow;
+    private JPanel footer;
     private JButton signupBtn;
     private JLabel titleLabel;
     private JLabel usernameLabel;
     private JLabel passwordLabel;
-    private JLabel linkrowLabel;
+    private JLabel footerLabel;
 
     private AppFrame appFrame;
 
@@ -29,5 +29,12 @@ public class LoginPanel extends JPanel {
         this.appFrame = appFrame;
         setLayout(new BorderLayout());
         add(rootPanel, BorderLayout.CENTER);
+
+        loginBtn.addActionListener(e -> login());
+        signupBtn.addActionListener(e -> appFrame.showSignup());
+    }
+
+    private void login(){
+
     }
 }
