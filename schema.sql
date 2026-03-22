@@ -1,0 +1,44 @@
+CREATE DATABASE IF NOT EXISTS flipit;
+USE flipit;
+
+CREATE TABLE IF NOT EXISTS users (
+id INT AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(50)  UNIQUE NOT NULL,
+email VARCHAR(100) UNIQUE NOT NULL,
+password VARCHAR(255) NOT NULL,
+role ENUM('user','admin') DEFAULT 'user',
+is_active BOOLEAN DEFAULT TRUE,
+);
+
+CREATE TABLE IF NOT EXISTS decks (
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT NOT NULL,
+title VARCHAR(150) NOT NULL,
+description TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cards (
+id INT AUTO_INCREMENT PRIMARY KEY,
+deck_id INT NOT NULL,
+question TEXT NOT NULL,
+answer_a TEXT NOT NULL,
+answer_b TEXT NOT NULL,
+answer_c TEXT NOT NULL,
+answer_d TEXT NOT NULL,
+correct_answer CHAR(1) NOT NULL,
+FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS card_progress (
+user_id INT NOT NULL,
+card_id INT NOT NULL,
+answered BOOLEAN DEFAULT FALSE,
+PRIMARY KEY (user_id, card_id),
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+);
+
+INSERT IGNORE INTO users (username, email, password, role) VALUES
+('admin','admin@flipit.com','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','admin');
