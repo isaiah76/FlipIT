@@ -87,36 +87,27 @@ public class QuizResultsPanel extends JPanel {
         styleAll();
         bindEvents();
 
-        new SwingWorker<Integer, Void>() {
-            boolean isBestScore = false;
-
+        new SwingWorker<CardProgressDAO.BestScoreResult, Void>() {
             @Override
-            protected Integer doInBackground() {
-                CardProgressDAO dao = new CardProgressDAO();
-
-                int currentDbBestPct = dao.getBestScorePct(mainPanel.getUser().getId(), deck.getId());
-                int currentRunPct = totalCards == 0 ? 100 : (finalScore * 100 / totalCards);
-
-                if (currentRunPct > currentDbBestPct && finalScore > 0) {
-                    isBestScore = true;
-                }
-
-                dao.updateBestScore(mainPanel.getUser().getId(), deck.getId(), finalScore, totalCards);
-                return dao.getBestScorePct(mainPanel.getUser().getId(), deck.getId());
+            protected CardProgressDAO.BestScoreResult doInBackground() {
+                return new CardProgressDAO().updateAndGetBestScore(
+                        mainPanel.getUser().getId(), deck.getId(), finalScore, totalCards);
             }
 
             @Override
             protected void done() {
                 try {
-                    int bestPct = get();
-                    bestScoreLbl.setText(bestPct + "%");
+                    CardProgressDAO.BestScoreResult result = get();
+                    bestScoreLbl.setText(result.bestPct + "%");
 
-                    if (isBestScore) {
+                    if (result.isNewBest) {
                         for (Component c : bestContentPanel.getComponents()) {
-                            if (c instanceof JLabel && "PERSONAL BEST".equals(((JLabel) c).getText())) {
-                                JLabel titleLbl = (JLabel) c;
-                                titleLbl.setText("NEW BEST!");
-                                titleLbl.setForeground(Color.decode("#ea580c"));
+                            if (c instanceof JLabel) {
+                                JLabel lbl = (JLabel) c;
+                                if ("PERSONAL BEST".equals(lbl.getText())) {
+                                    lbl.setText("NEW BEST!");
+                                    lbl.setForeground(Color.decode("#ea580c"));
+                                }
                             }
                         }
                     }
@@ -124,7 +115,7 @@ public class QuizResultsPanel extends JPanel {
                     bestScoreLbl.setText("--%");
                 } finally {
                     skeletonPanel.stop();
-                    cl.show(statsWrapper, "CONTENT");
+                    ((CardLayout) statsWrapper.getLayout()).show(statsWrapper, "CONTENT");
                 }
             }
         }.execute();

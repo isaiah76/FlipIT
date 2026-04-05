@@ -591,7 +591,6 @@ public class QuizPanel extends JPanel {
                 @Override
                 protected Void doInBackground() {
                     for (Card c : skippedCards) {
-                        session.sessionAnswers.put(c.getId(), "S");
                         progressDAO.setAnswered(user.getId(), c.getId(), false, "S");
                     }
                     return null;
@@ -599,6 +598,9 @@ public class QuizPanel extends JPanel {
 
                 @Override
                 protected void done() {
+                    for (Card c : skippedCards) {
+                        session.sessionAnswers.put(c.getId(), "S");
+                    }
                     isFinished = true;
                     loadQuestion();
                     showResults();

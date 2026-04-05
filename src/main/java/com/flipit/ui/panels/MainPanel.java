@@ -90,41 +90,60 @@ public class MainPanel extends JPanel {
 
     public void syncActiveSession() {
         if (activeSession == null || activeDeck == null) return;
-        CardDAO cardDAO = new CardDAO();
-        CardProgressDAO progressDAO = new CardProgressDAO();
-        List<Card> dbCards = cardDAO.getAllCardsByDeck(activeDeck.getId());
-        Map<Integer, Card> dbCardMap = new HashMap<>();
-        for (Card c : dbCards) dbCardMap.put(c.getId(), c);
 
-        List<Card> syncedCards = new ArrayList<>();
-        for (Card sessionCard : activeSession.cards) {
-            if (dbCardMap.containsKey(sessionCard.getId())) syncedCards.add(dbCardMap.get(sessionCard.getId()));
-        }
-        for (Card dbCard : dbCards) {
-            boolean existsInSession = false;
-            for (Card sc : activeSession.cards) {
-                if (sc.getId() == dbCard.getId()) {
-                    existsInSession = true;
-                    break;
+        new SwingWorker<QuizSession, Void>() {
+            @Override
+            protected QuizSession doInBackground() {
+                CardDAO cardDAO = new CardDAO();
+                CardProgressDAO progressDAO = new CardProgressDAO();
+
+                List<Card> dbCards = cardDAO.getAllCardsByDeck(activeDeck.getId());
+                Map<Integer, Card> dbCardMap = new HashMap<>();
+                for (Card c : dbCards) dbCardMap.put(c.getId(), c);
+
+                List<Card> syncedCards = new ArrayList<>();
+                for (Card sc : activeSession.cards) {
+                    if (dbCardMap.containsKey(sc.getId()))
+                        syncedCards.add(dbCardMap.get(sc.getId()));
+                }
+                for (Card dbCard : dbCards) {
+                    boolean exists = activeSession.cards.stream()
+                            .anyMatch(sc -> sc.getId() == dbCard.getId());
+                    if (!exists) syncedCards.add(dbCard);
+                }
+
+                int newScore = progressDAO.getCorrectCount(
+                        user.getId(), activeDeck.getId());
+
+                QuizSession updated = new QuizSession(
+                        syncedCards, syncedCards.size(), newScore,
+                        Math.min(activeSession.currentIndex,
+                                Math.max(0, syncedCards.size() - 1))
+                );
+                updated.sessionAnswers.putAll(activeSession.sessionAnswers);
+                return updated;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    QuizSession updated = get();
+                    activeSession = updated;
+
+                    if (activeQuizPanel != null && updated.totalDeckCards > 0) {
+                        for (Component c : contentPanel.getComponents())
+                            if (c instanceof QuizPanel) contentPanel.remove(c);
+                        activeQuizPanel = new QuizPanel(
+                                MainPanel.this, user, activeDeck, activeSession);
+                        contentPanel.add(activeQuizPanel, "QUIZ_SCREEN");
+                    } else if (updated.totalDeckCards == 0) {
+                        clearActiveSession();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-            if (!existsInSession) syncedCards.add(dbCard);
-        }
-
-        activeSession.cards = syncedCards;
-        activeSession.totalDeckCards = syncedCards.size();
-        if (activeSession.currentIndex >= activeSession.totalDeckCards) {
-            activeSession.currentIndex = Math.max(0, activeSession.totalDeckCards - 1);
-        }
-        activeSession.score = progressDAO.getCorrectCount(user.getId(), activeDeck.getId());
-
-        if (activeQuizPanel != null && activeSession.totalDeckCards > 0) {
-            for (Component c : contentPanel.getComponents()) if (c instanceof QuizPanel) contentPanel.remove(c);
-            activeQuizPanel = new QuizPanel(this, user, activeDeck, activeSession);
-            contentPanel.add(activeQuizPanel, "QUIZ_SCREEN");
-        } else if (activeSession.totalDeckCards == 0) {
-            clearActiveSession();
-        }
+        }.execute();
     }
 
     public MainPanel() {

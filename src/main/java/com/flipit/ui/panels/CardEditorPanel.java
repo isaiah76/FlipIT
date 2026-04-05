@@ -365,8 +365,8 @@ public class CardEditorPanel extends JPanel {
             warn.setVisible(true);
 
             if (warn.isApproved()) {
+                progressDAO.adjustHighscoresForCardDeletion(card.getId(), deck.getId());
                 cardDAO.deleteCard(card.getId());
-                progressDAO.syncDeckHighscores(deck.getId());
                 mainPanel.clearActiveSession();
                 loadCards();
             }
@@ -523,10 +523,14 @@ public class CardEditorPanel extends JPanel {
             }
 
             if (addedNew) {
+                progressDAO.incrementHighscoreTotalCards(deck.getId());
                 mainPanel.clearActiveSession();
+
             } else if (answerChanged) {
+                progressDAO.adjustHighscoresForAnswerChange(existing.getId(), deck.getId());
                 progressDAO.resetSingleCardProgress(existing.getId());
                 mainPanel.clearActiveSession();
+
             } else {
                 mainPanel.syncActiveSession();
             }
