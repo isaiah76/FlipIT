@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.flipit.ui.panels.SettingsPanel">
+  <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="754" height="767"/>
+    </constraints>
+    <properties>
+      <opaque value="false"/>
+    </properties>
+    <border type="none"/>
+    <children>
+      <grid id="head" binding="headerPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="3">
+        <margin top="18" left="30" bottom="18" right="30"/>
+        <constraints border-constraint="North"/>
+        <properties>
+          <opaque value="false"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="bBtn" class="javax.swing.JButton" binding="backBtn">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="← Back"/>
+            </properties>
+          </component>
+          <component id="tLbl" class="javax.swing.JLabel" binding="titleLbl">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Settings"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <scrollpane id="scr" binding="scrollPane">
+        <constraints border-constraint="Center"/>
+        <properties>
+          <opaque value="false"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <grid id="bdy" binding="bodyPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="18">
+            <margin top="0" left="30" bottom="45" right="30"/>
+            <constraints/>
+            <properties>
+              <opaque value="false"/>
+            </properties>
+            <border type="none"/>
+            <children>
+              <grid id="prfCrd" binding="profileCard" layout-manager="BorderLayout" hgap="0" vgap="12">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <opaque value="false"/>
+                </properties>
+                <border type="empty">
+                  <size top="18" left="21" bottom="18" right="21"/>
+                </border>
+                <children>
+                  <grid id="pTop" layout-manager="BorderLayout" hgap="0" vgap="6">
+                    <constraints border-constraint="North"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <component id="pTL" class="javax.swing.JLabel" binding="profTitleLbl">
+                        <constraints border-constraint="North"/>
+                        <properties>
+                          <text value="Profile"/>
+                        </properties>
+                      </component>
+                      <component id="pSep" class="javax.swing.JSeparator">
+                        <constraints border-constraint="South"/>
+                        <properties/>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="pFld" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="12" vgap="5">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <grid id="avGrid" layout-manager="FlowLayout" hgap="15" vgap="0" flow-align="0">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties><opaque value="false"/></properties>
+                        <border type="none"/>
+                        <children>
+                          <component id="avLbl" class="javax.swing.JPanel" binding="avatarPreviewLbl">
+                            <constraints/>
+                            <properties><preferredSize width="50" height="50"/></properties>
+                          </component>
+                          <component id="avBtn" class="javax.swing.JButton" binding="uploadAvatarBtn">
+                            <constraints/>
+                            <properties><text value="Upload Picture"/></properties>
+                          </component>
+                          <component id="rmvBtn" class="javax.swing.JButton" binding="removeAvatarBtn">
+                            <constraints/>
+                            <properties><text value="Remove"/></properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <component id="uL" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Username"/>
+                        </properties>
+                      </component>
+                      <component id="uF" class="javax.swing.JTextField" binding="usernameField">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="33"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="pBtm" layout-manager="BorderLayout" hgap="9" vgap="0">
+                    <constraints border-constraint="South"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="empty">
+                      <size top="10" left="0" bottom="0" right="0"/>
+                    </border>
+                    <children>
+                      <component id="pM" class="javax.swing.JLabel" binding="profMsgLbl">
+                        <constraints border-constraint="West"/>
+                        <properties>
+                          <text value=" "/>
+                        </properties>
+                      </component>
+                      <component id="pB" class="javax.swing.JButton" binding="saveProfBtn">
+                        <constraints border-constraint="East"/>
+                        <properties>
+                          <text value="Save Profile"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+              <grid id="pwdCrd" binding="passwordCard" layout-manager="BorderLayout" hgap="0" vgap="12">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <opaque value="false"/>
+                </properties>
+                <border type="empty">
+                  <size top="18" left="21" bottom="18" right="21"/>
+                </border>
+                <children>
+                  <grid id="pwTop" layout-manager="BorderLayout" hgap="0" vgap="6">
+                    <constraints border-constraint="North"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <component id="pwTL" class="javax.swing.JLabel" binding="passTitleLbl">
+                        <constraints border-constraint="North"/>
+                        <properties>
+                          <text value="Change Password"/>
+                        </properties>
+                      </component>
+                      <component id="pwSep" class="javax.swing.JSeparator">
+                        <constraints border-constraint="South"/>
+                        <properties/>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="pwFld" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="5">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <component id="cL" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Current Password"/>
+                        </properties>
+                      </component>
+                      <component id="cF" class="javax.swing.JPasswordField" binding="curPassField">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="33"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <component id="nL" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="New Password"/>
+                        </properties>
+                      </component>
+                      <component id="nF" class="javax.swing.JPasswordField" binding="newPassField">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="33"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <component id="cnL" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Confirm Password"/>
+                        </properties>
+                      </component>
+                      <component id="cnF" class="javax.swing.JPasswordField" binding="confPassField">
+                        <constraints>
+                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="33"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="pwBtm" layout-manager="BorderLayout" hgap="9" vgap="0">
+                    <constraints border-constraint="South"/>
+                    <properties>
+                      <opaque value="false"/>
+                    </properties>
+                    <border type="empty">
+                      <size top="10" left="0" bottom="0" right="0"/>
+                    </border>
+                    <children>
+                      <component id="pwM" class="javax.swing.JLabel" binding="passMsgLbl">
+                        <constraints border-constraint="West"/>
+                        <properties>
+                          <text value=" "/>
+                        </properties>
+                      </component>
+                      <component id="pwB" class="javax.swing.JButton" binding="changePassBtn">
+                        <constraints border-constraint="East"/>
+                        <properties>
+                          <text value="Change Password"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+              <vspacer id="spc">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+        </children>
+      </scrollpane>
+    </children>
+  </grid>
+</form>

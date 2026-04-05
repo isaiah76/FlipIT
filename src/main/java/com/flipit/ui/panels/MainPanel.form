@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.flipit.ui.panels.MainPanel">
+  <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="800" height="552"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="5b6e5" binding="navbarPanel" layout-manager="GridBagLayout">
+        <constraints border-constraint="North"/>
+        <properties>
+          <preferredSize width="-1" height="56"/>
+        </properties>
+        <border type="empty"/>
+        <children>
+          <grid id="7f4e3" binding="logoPanel" layout-manager="FlowLayout" hgap="10" vgap="5" flow-align="0">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="1.0" weighty="1.0"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="edd47" class="javax.swing.JLabel" binding="logoLabel">
+                <constraints/>
+                <properties>
+                  <text value="FlipIT"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="96752" binding="linksPanel" layout-manager="FlowLayout" hgap="4" vgap="5" flow-align="1">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="0.0" weighty="1.0"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="4b462" class="javax.swing.JButton" binding="AdminDashBtn">
+                <constraints/>
+                <properties>
+                  <text value="Dashboard"/>
+                </properties>
+              </component>
+              <component id="ac7ea" class="javax.swing.JButton" binding="AdminUsersBtn">
+                <constraints/>
+                <properties>
+                  <text value="Users"/>
+                </properties>
+              </component>
+              <component id="dc345" class="javax.swing.JButton" binding="HomeBtn">
+                <constraints/>
+                <properties>
+                  <text value="Home"/>
+                </properties>
+              </component>
+              <component id="brws1" class="javax.swing.JButton" binding="BrowseBtn">
+                <constraints/>
+                <properties>
+                  <text value="Browse"/>
+                </properties>
+              </component>
+              <component id="4a982" class="javax.swing.JButton" binding="DecksBtn">
+                <constraints/>
+                <properties>
+                  <text value="Decks"/>
+                </properties>
+              </component>
+              <component id="upld1" class="javax.swing.JButton" binding="UploadBtn">
+                <constraints/>
+                <properties>
+                  <text value="Upload"/>
+                </properties>
+              </component>
+              <component id="1b282" class="javax.swing.JButton" binding="FilesBtn">
+                <constraints/>
+                <properties>
+                  <text value="Files"/>
+                </properties>
+              </component>
+              <component id="modrep1" class="javax.swing.JButton" binding="ModReportsBtn">
+                <constraints/>
+                <properties>
+                  <text value="Reports"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="prof1" binding="profilePanel" layout-manager="FlowLayout" hgap="10" vgap="5" flow-align="2">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="1.0" weighty="1.0"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="usrL1" class="javax.swing.JLabel" binding="usernameLabel">
+                <constraints/>
+                <properties>
+                  <text value="Username"/>
+                </properties>
+              </component>
+              <component id="3a7ef" class="javax.swing.JButton" binding="avatarBtn">
+                <constraints/>
+                <properties>
+                  <minimumSize width="48" height="48"/>
+                  <preferredSize width="48" height="48"/>
+                  <text value=""/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="be180" binding="contentPanel" layout-manager="CardLayout" hgap="0" vgap="0">
+        <constraints border-constraint="Center"/>
+        <properties/>
+        <border type="none"/>
+        <children/>
+      </grid>
+    </children>
+  </grid>
+</form>

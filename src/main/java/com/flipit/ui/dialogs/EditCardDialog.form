@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.flipit.ui.dialogs.EditCardDialog">
+  <grid id="cbd77" binding="contentPane" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="10" vgap="10">
+    <margin top="15" left="20" bottom="15" right="20"/>
+    <constraints>
+      <xy x="48" y="54" width="450" height="450"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties>
+      <background color="-1"/>
+    </properties>
+    <border type="none"/>
+    <children>
+      <component id="title" class="javax.swing.JLabel" binding="titleLabel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Edit Card"/>
+        </properties>
+      </component>
+      
+      <grid id="formGrid" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="10" vgap="10">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties>
+          <background color="-1"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="qLbl" class="javax.swing.JLabel">
+            <constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/></constraints>
+            <properties><text value="Question"/></properties>
+          </component>
+          <scrollpane id="qScroll">
+            <constraints><grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3"/></constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="qArea" class="javax.swing.JTextArea" binding="qArea">
+                <properties><lineWrap value="true"/><rows value="4"/><wrapStyleWord value="true"/></properties>
+              </component>
+            </children>
+          </scrollpane>
+
+          <component id="aLbl" class="javax.swing.JLabel">
+            <constraints><grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value="Answer A"/></properties>
+          </component>
+          <component id="aFld" class="javax.swing.JTextField" binding="aField">
+            <constraints><grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/></constraints>
+            <properties/>
+          </component>
+
+          <component id="bLbl" class="javax.swing.JLabel">
+            <constraints><grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value="Answer B"/></properties>
+          </component>
+          <component id="bFld" class="javax.swing.JTextField" binding="bField">
+            <constraints><grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/></constraints>
+            <properties/>
+          </component>
+
+          <component id="cLbl" class="javax.swing.JLabel">
+            <constraints><grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value="Answer C"/></properties>
+          </component>
+          <component id="cFld" class="javax.swing.JTextField" binding="cField">
+            <constraints><grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/></constraints>
+            <properties/>
+          </component>
+
+          <component id="dLbl" class="javax.swing.JLabel">
+            <constraints><grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value="Answer D"/></properties>
+          </component>
+          <component id="dFld" class="javax.swing.JTextField" binding="dField">
+            <constraints><grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/></constraints>
+            <properties/>
+          </component>
+
+          <component id="correctLbl" class="javax.swing.JLabel">
+            <constraints><grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value="Correct"/></properties>
+          </component>
+          <component id="correctBox" class="javax.swing.JComboBox" binding="correctCb">
+            <constraints><grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/></constraints>
+            <properties>
+              <model>
+                <item value="A – First Answer"/>
+                <item value="B – Second Answer"/>
+                <item value="C – Third Answer"/>
+                <item value="D – Fourth Answer"/>
+              </model>
+            </properties>
+          </component>
+        </children>
+      </grid>
+
+      <grid id="btnGrid" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties>
+          <background color="-1"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="errLbl" class="javax.swing.JLabel" binding="errorLabel">
+            <constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/></constraints>
+            <properties><text value=" "/></properties>
+          </component>
+          <hspacer id="spacer">
+            <constraints><grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/></constraints>
+          </hspacer>
+          <grid id="actionBtns" row-count="1" column-count="2" same-size-horizontally="true" same-size-vertically="false" hgap="10" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints><grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/></constraints>
+            <properties><background color="-1"/></properties>
+            <border type="none"/>
+            <children>
+              <component id="btnCancel" class="javax.swing.JButton" binding="buttonCancel">
+                <constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/></constraints>
+                <properties><text value="Cancel"/></properties>
+              </component>
+              <component id="btnOk" class="javax.swing.JButton" binding="buttonOK">
+                <constraints><grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/></constraints>
+                <properties><text value="Save"/></properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

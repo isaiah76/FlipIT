@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.flipit.ui.panels.UploadPanel">
+  <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="731" height="536"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <scrollpane id="db0da">
+        <constraints border-constraint="Center"/>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="63a0e" binding="scrollContent" layout-manager="GridBagLayout">
+            <constraints/>
+            <properties/>
+            <border type="empty"/>
+            <children>
+              <grid id="f12d0" binding="uploadPanel" layout-manager="GridBagLayout">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <gridbag top="0" left="0" bottom="25" right="0" weightx="1.0" weighty="0.0"/>
+                </constraints>
+                <properties>
+                  <preferredSize width="-1" height="260"/>
+                </properties>
+                <border type="none"/>
+                <children>
+                  <component id="10f67" class="javax.swing.JLabel" binding="uploadIcon">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                      <gridbag top="0" left="0" bottom="16" right="0" weightx="1.0" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="62dc" class="javax.swing.JLabel" binding="titleuploadLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                      <gridbag top="0" left="0" bottom="10" right="0" weightx="1.0" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value="Upload Files"/>
+                    </properties>
+                  </component>
+                  <component id="7f620" class="javax.swing.JLabel" binding="subtitleuploadLabel">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                      <gridbag top="0" left="0" bottom="20" right="0" weightx="1.0" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value="Click here to browse files"/>
+                    </properties>
+                  </component>
+                  <grid id="8743e" binding="badgesPanel" layout-manager="FlowLayout" hgap="12" vgap="0" flow-align="1">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="1.0" weighty="0.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="82216" class="javax.swing.JLabel" binding="badgeLabel1">
+                        <constraints/>
+                        <properties>
+                          <text value=".PDF"/>
+                        </properties>
+                      </component>
+                      <component id="d14bb" class="javax.swing.JLabel" binding="badgeLabel2">
+                        <constraints/>
+                        <properties>
+                          <text value=".DOCX"/>
+                        </properties>
+                      </component>
+                      <component id="ae9f1" class="javax.swing.JLabel" binding="badgeLabel3">
+                        <constraints/>
+                        <properties>
+                          <text value=".PPTX"/>
+                        </properties>
+                      </component>
+                      <component id="4b852" class="javax.swing.JLabel" binding="badgeLabel4">
+                        <constraints/>
+                        <properties>
+                          <text value=".TXT"/>
+                        </properties>
+                      </component>
+                      <component id="9c7bd" class="javax.swing.JLabel" binding="badgeLabel5">
+                        <constraints/>
+                        <properties>
+                          <text value=".MD"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+              <grid id="535fc" binding="sectionHeaderPanel" layout-manager="GridBagLayout">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <gridbag top="0" left="0" bottom="12" right="0" weightx="1.0" weighty="0.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="9d3ba" class="javax.swing.JLabel" binding="recentdecksLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <gridbag top="0" left="6" bottom="0" right="0" weightx="1.0" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Recent Generated Decks"/>
+                    </properties>
+                  </component>
+                  <component id="370a5" class="javax.swing.JButton" binding="viewallBtn">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="0.0" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <text value="View all →"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="9ed34" binding="deckListPanel" layout-manager="GridBagLayout">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <gridbag weightx="1.0" weighty="1.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </grid>
+            </children>
+          </grid>
+        </children>
+      </scrollpane>
+    </children>
+  </grid>
+</form>
