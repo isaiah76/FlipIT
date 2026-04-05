@@ -1593,7 +1593,7 @@ public class DecksPanel extends JPanel {
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
         String currentTags = deck.getTags() != null ? String.join(", ", deck.getTags()) : "";
 
-        InputDialog dialog = new InputDialog(parentWindow, "Update Tags", "Update tags (comma separated):", currentTags);
+        InputDialog dialog = new InputDialog(parentWindow, "Update Tags", "Update tags (comma separated, max 6):", currentTags);
         dialog.setVisible(true);
 
         if (dialog.isApproved()) {

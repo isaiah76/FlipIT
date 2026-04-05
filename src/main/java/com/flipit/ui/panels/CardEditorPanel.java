@@ -240,6 +240,15 @@ public class CardEditorPanel extends JPanel {
         cardLoaderWorker.execute();
     }
 
+    private void addHoverListenerRecursively(Component comp, MouseAdapter listener) {
+        comp.addMouseListener(listener);
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                addHoverListenerRecursively(child, listener);
+            }
+        }
+    }
+
     private JPanel buildSkeletonCardRow() {
         JPanel row = new JPanel() {
             @Override
@@ -306,32 +315,16 @@ public class CardEditorPanel extends JPanel {
 
     private JPanel buildCardRow(Card card, int index, int total) {
         Font baseFont = getBaseFont();
+        final boolean[] isHovered = {false};
+
         JPanel panel = new JPanel(new BorderLayout(0, s(9))) {
-            boolean hov = false;
-
-            {
-                addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        hov = true;
-                        repaint();
-                    }
-
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        hov = false;
-                        repaint();
-                    }
-                });
-            }
-
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? Color.decode("#eff6ff") : Color.WHITE);
+                g2.setColor(isHovered[0] ? Color.decode("#eff6ff") : Color.WHITE);
                 g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), s(10), s(10)));
-                g2.setColor(hov ? Color.decode("#3b82f6") : Color.decode("#e2e8f0"));
+                g2.setColor(isHovered[0] ? Color.decode("#3b82f6") : Color.decode("#e2e8f0"));
                 g2.setStroke(new BasicStroke(1));
                 g2.draw(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, s(9), s(9)));
                 g2.dispose();
@@ -340,7 +333,7 @@ public class CardEditorPanel extends JPanel {
         };
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(s(12), s(15), s(12), s(15)));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height + s(12)));
+
 
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setOpaque(false);
@@ -352,10 +345,10 @@ public class CardEditorPanel extends JPanel {
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, s(5), 0));
         btns.setOpaque(false);
 
-        JButton editBtn = outlineButton("Edit");
+        JButton editBtn = outlineButton("Edit", false);
         editBtn.addActionListener(e -> showCardDialog(card));
 
-        JButton delBtn = iconButton("🗑", Color.decode("#ef4444"));
+        JButton delBtn = outlineButton("Delete", true);
         delBtn.addActionListener(e -> {
             if (deck.isPublic() && total <= 1) {
                 new InfoDialog(SwingUtilities.getWindowAncestor(this),
@@ -457,6 +450,25 @@ public class CardEditorPanel extends JPanel {
 
         Dimension pref = panel.getPreferredSize();
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, pref.height + s(12)));
+
+        MouseAdapter hoverAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                isHovered[0] = true;
+                panel.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), panel);
+                if (!panel.contains(p)) {
+                    isHovered[0] = false;
+                    panel.repaint();
+                }
+            }
+        };
+        addHoverListenerRecursively(panel, hoverAdapter);
+
         return panel;
     }
 
@@ -627,22 +639,9 @@ public class CardEditorPanel extends JPanel {
         return l;
     }
 
-    private JButton outlineButton(String text) {
+    private JButton outlineButton(String text, boolean danger) {
         Font baseFont = getBaseFont();
-        JButton b = new JButton(text);
-        b.setFont(baseFont.deriveFont(Font.BOLD, f(8f)));
-        b.setForeground(Color.decode("#64748b"));
-        b.setBackground(Color.decode("#f1f5f9"));
-        b.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.decode("#e2e8f0"), 1),
-                BorderFactory.createEmptyBorder(s(3), s(8), s(3), s(8))));
-        b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return b;
-    }
-
-    private JButton iconButton(String icon, Color fg) {
-        JButton b = new JButton(icon) {
+        JButton b = new JButton(text) {
             boolean hov = false;
 
             {
@@ -650,12 +649,14 @@ public class CardEditorPanel extends JPanel {
                     @Override
                     public void mouseEntered(MouseEvent e) {
                         hov = true;
+                        setForeground(danger ? Color.decode("#dc2626") : Color.decode("#2563eb"));
                         repaint();
                     }
 
                     @Override
                     public void mouseExited(MouseEvent e) {
                         hov = false;
+                        setForeground(danger ? Color.decode("#ef4444") : Color.decode("#64748b"));
                         repaint();
                     }
                 });
@@ -663,23 +664,35 @@ public class CardEditorPanel extends JPanel {
 
             @Override
             protected void paintComponent(Graphics g) {
-                if (hov) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(Color.decode("#fee2e2"));
-                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), s(5), s(5)));
-                    g2.dispose();
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                if (danger) {
+                    g2.setColor(hov ? Color.decode("#fee2e2") : Color.decode("#f1f5f9"));
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), s(6), s(6)));
+                    g2.setColor(hov ? Color.decode("#fca5a5") : Color.decode("#cbd5e1"));
+                } else {
+                    g2.setColor(hov ? Color.WHITE : Color.decode("#f1f5f9"));
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), s(6), s(6)));
+                    g2.setColor(hov ? Color.decode("#3b82f6") : Color.decode("#cbd5e1"));
                 }
+
+                g2.setStroke(new BasicStroke(1));
+                g2.draw(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, s(5), s(5)));
+
+                g2.dispose();
                 super.paintComponent(g);
             }
         };
+
         b.setContentAreaFilled(false);
         b.setBorderPainted(false);
         b.setFocusPainted(false);
-        b.setFont(new Font("Segoe UI Emoji", Font.PLAIN, (int) f(9f)));
-        b.setForeground(fg);
-        b.setPreferredSize(new Dimension(s(24), s(23)));
+        b.setFont(baseFont.deriveFont(Font.BOLD, f(8.5f)));
+        b.setForeground(danger ? Color.decode("#ef4444") : Color.decode("#64748b"));
+        b.setBorder(BorderFactory.createEmptyBorder(s(4), s(12), s(4), s(12)));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
         return b;
     }
 

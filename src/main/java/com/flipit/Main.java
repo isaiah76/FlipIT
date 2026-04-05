@@ -14,8 +14,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-// TODO: export deck, setup installer
-
+// TODO: setup installer
 public class Main {
     public static void main(String[] args) {
         String os = System.getProperty("os.name").toLowerCase();

@@ -23,14 +23,15 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 public class GenerationDialog extends JDialog {
     private JPanel root;
     private JPanel settingsCard;
     private JPanel loadingCard;
-    private JLabel titleLbl, fileLbl, deckTitleLbl, amountLbl;
-    private JTextField titleField;
+    private JLabel titleLbl, fileLbl, deckTitleLbl, tagsLbl, amountLbl;
+    private JTextField titleField, tagsField;
     private JSpinner amountSpinner;
     private JButton cancelBtn, generateBtn;
     private JPanel spinnerPanel;
@@ -112,12 +113,19 @@ public class GenerationDialog extends JDialog {
         deckTitleLbl.setFont(baseFont.deriveFont(Font.BOLD, f(12f)));
         deckTitleLbl.setForeground(Color.decode("#334155"));
 
+        tagsLbl.setFont(baseFont.deriveFont(Font.BOLD, f(12f)));
+        tagsLbl.setForeground(Color.decode("#334155"));
+
         amountLbl.setFont(baseFont.deriveFont(Font.BOLD, f(12f)));
         amountLbl.setForeground(Color.decode("#334155"));
 
         titleField.setPreferredSize(new Dimension(-1, s(36)));
         titleField.setFont(baseFont.deriveFont(Font.PLAIN, f(13f)));
         titleField.setBorder(new RoundedFieldBorder(Color.decode("#cbd5e1"), s(8)));
+
+        tagsField.setPreferredSize(new Dimension(-1, s(36)));
+        tagsField.setFont(baseFont.deriveFont(Font.PLAIN, f(13f)));
+        tagsField.setBorder(new RoundedFieldBorder(Color.decode("#cbd5e1"), s(8)));
 
         amountSpinner.setPreferredSize(new Dimension(-1, s(36)));
         amountSpinner.setFont(baseFont.deriveFont(Font.PLAIN, f(13f)));
@@ -166,11 +174,34 @@ public class GenerationDialog extends JDialog {
 
     private void startGeneration() {
         String deckTitle = titleField.getText().trim();
+        String tagsInput = tagsField.getText().trim();
         int cardCount = (int) amountSpinner.getValue();
 
         if (deckTitle.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a deck title.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
+        }
+
+        final List<String> tagList = new ArrayList<>();
+        if (!tagsInput.isEmpty()) {
+            String[] splitTags = tagsInput.split(",");
+            for (String t : splitTags) {
+                String trimmed = t.trim();
+                if (!trimmed.isEmpty()) {
+                    if (trimmed.length() > 30) {
+                        JOptionPane.showMessageDialog(this, "Tags cannot exceed 30 characters.\n'" + trimmed + "' is too long.", "Tag Too Long", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    if (!tagList.contains(trimmed)) {
+                        tagList.add(trimmed);
+                    }
+                }
+            }
+
+            if (tagList.size() > 6) {
+                JOptionPane.showMessageDialog(this, "You can only add up to 6 tags. You entered " + tagList.size() + ".", "Too Many Tags", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
         }
 
         cardLayout.show(root, "LOADING");
@@ -191,9 +222,7 @@ public class GenerationDialog extends JDialog {
                 }
 
                 FileDAO fileDAO = new FileDAO();
-                if (fileDAO.fileExists(user.getId(), file.getName())) {
-                    throw new IllegalStateException("CONFLICT:You have already uploaded a file with this name.\nPlease rename the file or check your 'Files' tab.");
-                }
+                int existingFileId = fileDAO.getFileIdByName(user.getId(), file.getName());
 
                 if (isCancelled()) return -1;
 
@@ -211,25 +240,34 @@ public class GenerationDialog extends JDialog {
                 List<Card> generatedCards = gemini.generateCards(extractedText, cardCount);
 
                 if (generatedCards == null || generatedCards.isEmpty()) {
-                    throw new Exception("The AI could not generate any flashcards from this document. The content might be too short or lacks factual information.");
+                    throw new Exception("Could not generate any flashcards from this document. The content might be too short or lacks factual information.");
                 }
 
                 if (isCancelled()) return -1;
 
-                publish("Saving to your deck...");
+                int finalFileId = existingFileId;
 
-                String ext = "";
-                int dotIndex = file.getName().lastIndexOf('.');
-                if (dotIndex > 0) ext = file.getName().substring(dotIndex);
+                if (existingFileId <= 0) {
+                    publish("Saving...");
+                    String ext = "";
+                    int dotIndex = file.getName().lastIndexOf('.');
+                    if (dotIndex > 0) ext = file.getName().substring(dotIndex);
 
-                byte[] fileData = Files.readAllBytes(file.toPath());
-                long fileSize = file.length();
+                    byte[] fileData = Files.readAllBytes(file.toPath());
+                    long fileSize = file.length();
 
-                int fileId = fileDAO.logFile(user.getId(), file.getName(), ext, fileSize, fileData);
+                    finalFileId = fileDAO.logFile(user.getId(), file.getName(), ext, fileSize, fileData);
+                } else {
+                    publish("Linking to existing file...");
+                }
 
                 if (isCancelled()) return -1;
 
-                int deckId = deckDAO.createDeck(user.getId(), (fileId > 0 ? fileId : null), deckTitle, "Generated via AI from " + file.getName(), false);
+                int deckId = deckDAO.createDeck(user.getId(), (finalFileId > 0 ? finalFileId : null), deckTitle, "Generated from " + file.getName(), false);
+
+                if (deckId > 0 && !tagList.isEmpty()) {
+                    deckDAO.updateDeckTags(deckId, tagList);
+                }
 
                 CardDAO cardDAO = new CardDAO();
                 cardDAO.addCardsBatch(deckId, generatedCards);
@@ -332,7 +370,7 @@ public class GenerationDialog extends JDialog {
     private void $$$setupUI$$$() {
         root = new JPanel();
         root.setLayout(new CardLayout(0, 0));
-        root.setPreferredSize(new Dimension(450, 320));
+        root.setPreferredSize(new Dimension(450, 420));
         settingsCard = new JPanel();
         settingsCard.setLayout(new GridBagLayout());
         settingsCard.setBackground(new Color(-1));
@@ -380,11 +418,32 @@ public class GenerationDialog extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(0, 0, 16, 0);
         settingsCard.add(titleField, gbc);
+        tagsLbl = new JLabel();
+        tagsLbl.setText("Tags (comma separated, optional)");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(0, 0, 6, 0);
+        settingsCard.add(tagsLbl, gbc);
+        tagsField = new JTextField();
+        tagsField.setPreferredSize(new Dimension(-1, 36));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 0, 16, 0);
+        settingsCard.add(tagsField, gbc);
         amountLbl = new JLabel();
         amountLbl.setText("Number of Cards to Generate");
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.WEST;
@@ -394,7 +453,7 @@ public class GenerationDialog extends JDialog {
         amountSpinner.setPreferredSize(new Dimension(-1, 36));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 7;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.WEST;
@@ -406,7 +465,7 @@ public class GenerationDialog extends JDialog {
         panel1.setOpaque(false);
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 8;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;

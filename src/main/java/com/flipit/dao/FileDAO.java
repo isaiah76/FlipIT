@@ -29,17 +29,22 @@ public class FileDAO {
     }
 
     public boolean fileExists(int userId, String fileName) {
-        String sql = "SELECT 1 FROM uploaded_files WHERE user_id = ? AND file_name = ?";
+        return getFileIdByName(userId, fileName) > 0;
+    }
+
+    public int getFileIdByName(int userId, String fileName) {
+        String sql = "SELECT id FROM uploaded_files WHERE user_id = ? AND file_name = ?";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setString(2, fileName);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+                if (rs.next()) return rs.getInt("id");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error checking file existence", e);
+            throw new RuntimeException("Database error getting file ID", e);
         }
+        return -1;
     }
 
     public byte[] getFileData(int fileId) {
