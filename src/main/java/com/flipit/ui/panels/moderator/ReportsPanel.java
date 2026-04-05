@@ -4,6 +4,8 @@ import com.flipit.dao.DeckDAO;
 import com.flipit.dao.ReportDAO;
 import com.flipit.models.DeckReport;
 import com.flipit.models.User;
+import com.flipit.ui.dialogs.InfoDialog;
+import com.flipit.ui.dialogs.SuccessDialog;
 import com.flipit.ui.dialogs.WarningDialog;
 import com.flipit.ui.panels.MainPanel;
 import com.flipit.util.IconUtil;
@@ -44,6 +46,8 @@ public class ReportsPanel extends JPanel {
     private boolean isUpdatingPlaceholder = false;
     private SwingWorker<List<DeckReport>, Void> reportLoaderWorker;
     private final Timer searchDebounceTimer;
+
+    private List<DeckReport> currentDisplayedReports = new ArrayList<>();
 
     private List<DeckReport> cachedReports = null;
     private long cacheTimestamp = 0;
@@ -196,6 +200,12 @@ public class ReportsPanel extends JPanel {
         }
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedReports != null) {
+            renderList(currentDisplayedReports, sortComboBox.getSelectedIndex());
+        }
+    }
+
     private void loadReports() {
         if (reportListPanel == null) return;
 
@@ -209,7 +219,8 @@ public class ReportsPanel extends JPanel {
         final int sortIdx = sortComboBox.getSelectedIndex();
 
         if (searchQuery.isEmpty() && cachedReports != null && (System.currentTimeMillis() - cacheTimestamp < CACHE_TTL_MS)) {
-            renderList(new ArrayList<>(cachedReports), sortIdx);
+            currentDisplayedReports = new ArrayList<>(cachedReports);
+            renderList(currentDisplayedReports, sortIdx);
             return;
         }
 
@@ -248,12 +259,14 @@ public class ReportsPanel extends JPanel {
                     List<DeckReport> filtered = get();
                     if (filtered == null) return;
 
+                    currentDisplayedReports = new ArrayList<>(filtered);
+
                     if (searchQuery.isEmpty()) {
                         cachedReports = new ArrayList<>(filtered);
                         cacheTimestamp = System.currentTimeMillis();
                     }
 
-                    renderList(filtered, sortIdx);
+                    renderList(currentDisplayedReports, sortIdx);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -263,6 +276,8 @@ public class ReportsPanel extends JPanel {
     }
 
     private void renderList(List<DeckReport> listToRender, int sortIdx) {
+        if (listToRender == null) return;
+
         listToRender.sort((r1, r2) -> {
             if (sortIdx == 1) return r2.getCreatedAt().compareTo(r1.getCreatedAt());
             return r1.getCreatedAt().compareTo(r2.getCreatedAt());
@@ -426,7 +441,10 @@ public class ReportsPanel extends JPanel {
             dialog.setVisible(true);
 
             if (dialog.isApproved()) {
-                card.setVisible(false);
+                if (currentDisplayedReports != null) currentDisplayedReports.removeIf(r -> r.getId() == report.getId());
+                if (cachedReports != null) cachedReports.removeIf(r -> r.getId() == report.getId());
+                executeOptimisticUpdate();
+
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() {
@@ -436,10 +454,10 @@ public class ReportsPanel extends JPanel {
 
                     @Override
                     protected void done() {
-                        cachedReports = null;
-                        refresh();
                     }
                 }.execute();
+
+                new SuccessDialog(parentWindow, "Report Dismissed", "The report has been successfully dismissed.").setVisible(true);
             }
         });
 
@@ -450,7 +468,10 @@ public class ReportsPanel extends JPanel {
             dialog.setVisible(true);
 
             if (dialog.isApproved()) {
-                card.setVisible(false);
+                if (currentDisplayedReports != null) currentDisplayedReports.removeIf(r -> r.getId() == report.getId());
+                if (cachedReports != null) cachedReports.removeIf(r -> r.getId() == report.getId());
+                executeOptimisticUpdate();
+
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() {
@@ -461,10 +482,11 @@ public class ReportsPanel extends JPanel {
 
                     @Override
                     protected void done() {
-                        cachedReports = null;
-                        refresh();
+                        mainPanel.invalidateDeckCaches();
                     }
                 }.execute();
+
+                new SuccessDialog(parentWindow, "Deck Disabled", "The deck has been successfully disabled and report resolved.").setVisible(true);
             }
         });
 

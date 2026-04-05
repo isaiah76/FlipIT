@@ -15,9 +15,6 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -59,6 +56,8 @@ public class BrowsePanel extends JPanel {
 
     private SwingWorker<List<DeckRenderData>, Void> deckLoaderWorker;
     private final Timer searchDebounceTimer;
+
+    private List<DeckRenderData> currentDisplayedDecks = new ArrayList<>();
 
     private List<DeckRenderData> cachedPublicDecks = null;
     private List<DeckRenderData> cachedDisabledDecks = null;
@@ -259,6 +258,12 @@ public class BrowsePanel extends JPanel {
         }
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedDecks != null) {
+            renderList(currentDisplayedDecks, sortComboBox.getSelectedIndex());
+        }
+    }
+
     private void loadDecks() {
         if (deckGridPanel == null) return;
 
@@ -274,10 +279,12 @@ public class BrowsePanel extends JPanel {
 
         if (searchQuery.isEmpty()) {
             if (currentDisabledView && cachedDisabledDecks != null && (System.currentTimeMillis() - cacheTimestampDisabled < CACHE_TTL_MS)) {
-                renderList(cachedDisabledDecks, sortIdx);
+                currentDisplayedDecks = new ArrayList<>(cachedDisabledDecks);
+                renderList(currentDisplayedDecks, sortIdx);
                 return;
             } else if (!currentDisabledView && cachedPublicDecks != null && (System.currentTimeMillis() - cacheTimestampPublic < CACHE_TTL_MS)) {
-                renderList(cachedPublicDecks, sortIdx);
+                currentDisplayedDecks = new ArrayList<>(cachedPublicDecks);
+                renderList(currentDisplayedDecks, sortIdx);
                 return;
             }
         }
@@ -388,17 +395,19 @@ public class BrowsePanel extends JPanel {
                     List<DeckRenderData> renderList = get();
                     if (renderList == null) return;
 
+                    currentDisplayedDecks = new ArrayList<>(renderList);
+
                     if (searchQuery.isEmpty()) {
                         if (currentDisabledView) {
-                            cachedDisabledDecks = renderList;
+                            cachedDisabledDecks = new ArrayList<>(renderList);
                             cacheTimestampDisabled = System.currentTimeMillis();
                         } else {
-                            cachedPublicDecks = renderList;
+                            cachedPublicDecks = new ArrayList<>(renderList);
                             cacheTimestampPublic = System.currentTimeMillis();
                         }
                     }
 
-                    renderList(renderList, sortIdx);
+                    renderList(currentDisplayedDecks, sortIdx);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -409,6 +418,8 @@ public class BrowsePanel extends JPanel {
     }
 
     private void renderList(List<DeckRenderData> listToRender, int sortIdx) {
+        if (listToRender == null) return;
+
         listToRender.sort((d1, d2) -> {
             Timestamp t1 = d1.deck.getPublishedAt() != null ? d1.deck.getPublishedAt() : d1.deck.getCreatedAt();
             Timestamp t2 = d2.deck.getPublishedAt() != null ? d2.deck.getPublishedAt() : d2.deck.getCreatedAt();
@@ -1237,20 +1248,31 @@ public class BrowsePanel extends JPanel {
                     dialog.setVisible(true);
 
                     if (dialog.isApproved()) {
+                        deck.setDisabled(!deck.isDisabled());
+                        if (currentDisplayedDecks != null) currentDisplayedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                        executeOptimisticUpdate();
+
                         new SwingWorker<Void, Void>() {
                             @Override
                             protected Void doInBackground() {
-                                deckDAO.setDeckDisabled(deck.getId(), !deck.isDisabled());
+                                deckDAO.setDeckDisabled(deck.getId(), deck.isDisabled());
                                 return null;
                             }
 
                             @Override
                             protected void done() {
-                                mainPanel.invalidateDeckCaches();
-                                mainPanel.refreshCurrentScreen();
-                                new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", deck.isDisabled() ? "Deck enabled!" : "Deck disabled!").setVisible(true);
+                                try {
+                                    get();
+                                    mainPanel.invalidateDeckCaches();
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                    deck.setDisabled(!deck.isDisabled());
+                                    executeOptimisticUpdate();
+                                    new InfoDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Error", "Failed to moderate deck.").setVisible(true);
+                                }
                             }
                         }.execute();
+                        new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", deck.isDisabled() ? "Deck disabled!" : "Deck enabled!").setVisible(true);
                     }
                 });
             } else {
@@ -1268,20 +1290,33 @@ public class BrowsePanel extends JPanel {
                     dialog.setVisible(true);
 
                     if (dialog.isApproved()) {
+                        deck.setPublic(!deck.isPublic());
+                        if (!deck.isPublic() && currentDisplayedDecks != null) {
+                            currentDisplayedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                        }
+                        executeOptimisticUpdate();
+
                         new SwingWorker<Void, Void>() {
                             @Override
                             protected Void doInBackground() {
-                                deckDAO.updateDeck(deck.getId(), deck.getTitle(), deck.getDescription(), !deck.isPublic());
+                                deckDAO.updateDeck(deck.getId(), deck.getTitle(), deck.getDescription(), deck.isPublic());
                                 return null;
                             }
 
                             @Override
                             protected void done() {
-                                mainPanel.invalidateDeckCaches();
-                                mainPanel.refreshCurrentScreen();
-                                new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", deck.isPublic() ? "Deck is now private!" : "Deck published successfully!").setVisible(true);
+                                try {
+                                    get();
+                                    mainPanel.invalidateDeckCaches();
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                    deck.setPublic(!deck.isPublic());
+                                    executeOptimisticUpdate();
+                                    new InfoDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Error", "Failed to toggle visibility.").setVisible(true);
+                                }
                             }
                         }.execute();
+                        new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", deck.isPublic() ? "Deck published successfully!" : "Deck is now private!").setVisible(true);
                     }
                 });
             }
@@ -1335,6 +1370,11 @@ public class BrowsePanel extends JPanel {
                 dialog.setVisible(true);
 
                 if (dialog.isApproved()) {
+                    if (currentDisplayedDecks != null) currentDisplayedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                    if (cachedPublicDecks != null) cachedPublicDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                    if (cachedDisabledDecks != null) cachedDisabledDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                    executeOptimisticUpdate();
+
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() throws Exception {
@@ -1357,14 +1397,14 @@ public class BrowsePanel extends JPanel {
                             try {
                                 get();
                                 mainPanel.invalidateDeckCaches();
-                                mainPanel.refreshCurrentScreen();
-                                new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Deleted", "Deck deleted successfully!").setVisible(true);
                             } catch (Exception ex) {
                                 ex.printStackTrace();
+                                refresh();
                                 new InfoDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Error", "Failed to delete deck. Database conflict.").setVisible(true);
                             }
                         }
                     }.execute();
+                    new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Deleted", "Deck deleted successfully!").setVisible(true);
                 }
             });
             menu.add(delete);
@@ -1421,6 +1461,10 @@ public class BrowsePanel extends JPanel {
                     }
                 }
 
+                String oldTitle = deck.getTitle();
+                deck.setTitle(finalName);
+                executeOptimisticUpdate();
+
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() {
@@ -1430,11 +1474,19 @@ public class BrowsePanel extends JPanel {
 
                     @Override
                     protected void done() {
-                        mainPanel.invalidateDeckCaches();
-                        refresh();
-                        new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", "Deck renamed successfully!").setVisible(true);
+                        try {
+                            get();
+                            mainPanel.invalidateDeckCaches();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            deck.setTitle(oldTitle);
+                            executeOptimisticUpdate();
+                            new InfoDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Error", "Failed to rename deck.").setVisible(true);
+                        }
                     }
                 }.execute();
+
+                new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", "Deck renamed successfully!").setVisible(true);
             }
         }
     }
@@ -1471,21 +1523,32 @@ public class BrowsePanel extends JPanel {
                 }
             }
 
+            List<String> oldTags = deck.getTags();
+            deck.setTags(tagList);
+            executeOptimisticUpdate();
+
             new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() {
                     deckDAO.updateDeckTags(deck.getId(), tagList);
-                    deck.setTags(tagList);
                     return null;
                 }
 
                 @Override
                 protected void done() {
-                    mainPanel.invalidateDeckCaches();
-                    refresh();
-                    new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", "Tags updated successfully!").setVisible(true);
+                    try {
+                        get();
+                        mainPanel.invalidateDeckCaches();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        deck.setTags(oldTags); // Revert
+                        executeOptimisticUpdate();
+                        new InfoDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Error", "Failed to update tags.").setVisible(true);
+                    }
                 }
             }.execute();
+
+            new SuccessDialog(SwingUtilities.getWindowAncestor(BrowsePanel.this), "Success", "Tags updated successfully!").setVisible(true);
         }
     }
 

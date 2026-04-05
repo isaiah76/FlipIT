@@ -67,6 +67,10 @@ public class Card {
         }
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setQuestion(String q) {
         question = q;
     }

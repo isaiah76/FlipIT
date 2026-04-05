@@ -3,6 +3,7 @@ package com.flipit.ui.panels.admin;
 import com.flipit.dao.UserDAO;
 import com.flipit.models.User;
 import com.flipit.ui.dialogs.InfoDialog;
+import com.flipit.ui.dialogs.SuccessDialog;
 import com.flipit.ui.dialogs.WarningDialog;
 import com.flipit.ui.panels.MainPanel;
 import com.flipit.util.IconUtil;
@@ -52,6 +53,7 @@ public class AdminUsersPanel extends JPanel {
     private SwingWorker<List<User>, Void> userLoaderWorker;
     private final Timer searchDebounceTimer;
 
+    private List<User> currentDisplayedUsers = new ArrayList<>();
     private List<User> cachedUsers = null;
     private long cacheTimestamp = 0;
     private static final long CACHE_TTL_MS = 30_000;
@@ -298,6 +300,12 @@ public class AdminUsersPanel extends JPanel {
         });
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedUsers != null) {
+            renderList(currentDisplayedUsers, sortComboBox.getSelectedIndex());
+        }
+    }
+
     private void loadUsers() {
         if (userLoaderWorker != null && !userLoaderWorker.isDone()) {
             userLoaderWorker.cancel(true);
@@ -335,7 +343,6 @@ public class AdminUsersPanel extends JPanel {
             protected List<User> doInBackground() throws Exception {
                 List<User> allUsers;
 
-                // OPTIMIZATION: Only hit database if cache is missing/expired
                 if (cachedUsers != null && (System.currentTimeMillis() - cacheTimestamp < CACHE_TTL_MS)) {
                     allUsers = cachedUsers;
                 } else {
@@ -345,7 +352,6 @@ public class AdminUsersPanel extends JPanel {
                     cacheTimestamp = System.currentTimeMillis();
                 }
 
-                // Apply Filters and Search
                 List<User> filtered = new ArrayList<>();
                 for (User u : allUsers) {
                     boolean matchesSearch = searchQuery.isEmpty() ||
@@ -370,7 +376,8 @@ public class AdminUsersPanel extends JPanel {
                 try {
                     List<User> filtered = get();
                     if (filtered == null) return;
-                    renderList(filtered, sortIdx);
+                    currentDisplayedUsers = new ArrayList<>(filtered);
+                    renderList(currentDisplayedUsers, sortIdx);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -380,24 +387,34 @@ public class AdminUsersPanel extends JPanel {
     }
 
     private void renderList(List<User> listToRender, int sortIdx) {
+        if (listToRender == null) return;
+
         listToRender.sort((u1, u2) -> {
             if (sortIdx == 1) return Integer.compare(u2.getId(), u1.getId());
             if (sortIdx == 2) return u1.getUsername().compareToIgnoreCase(u2.getUsername());
             if (sortIdx == 3) return u2.getUsername().compareToIgnoreCase(u1.getUsername());
-            // Default, and fallback for 4, 5, 6
             return Integer.compare(u1.getId(), u2.getId());
         });
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
 
-        tableModel.setRowCount(0);
-        for (User u : listToRender) {
-            String regDate = u.getCreatedAt() != null ? sdf.format(u.getCreatedAt()) : "N/A";
+        int selectedRow = userTable.getSelectedRow();
+        int selectedId = selectedRow != -1 ? (int) tableModel.getValueAt(selectedRow, 0) : -1;
 
-            // Capitalize the first letter of the role for a cleaner table look
+        tableModel.setRowCount(0);
+
+        int newSelectedRow = -1;
+        for (int i = 0; i < listToRender.size(); i++) {
+            User u = listToRender.get(i);
+            String regDate = u.getCreatedAt() != null ? sdf.format(u.getCreatedAt()) : "N/A";
             String displayRole = u.getRole().substring(0, 1).toUpperCase() + u.getRole().substring(1).toLowerCase();
 
             tableModel.addRow(new Object[]{u.getId(), u.getUsername(), displayRole, u.isActive() ? "ACTIVE" : "DISABLED", regDate});
+            if (u.getId() == selectedId) newSelectedRow = i;
+        }
+
+        if (newSelectedRow != -1) {
+            userTable.setRowSelectionInterval(newSelectedRow, newSelectedRow);
         }
 
         CardLayout cl = (CardLayout) centerCardPanel.getLayout();
@@ -432,6 +449,31 @@ public class AdminUsersPanel extends JPanel {
         return row;
     }
 
+    private void updateListObjects(int userId, String newRole, Boolean isActive) {
+        if (currentDisplayedUsers != null) {
+            for (int i = 0; i < currentDisplayedUsers.size(); i++) {
+                if (currentDisplayedUsers.get(i).getId() == userId) {
+                    User old = currentDisplayedUsers.get(i);
+                    User updated = new User(old.getId(), old.getUsername(), newRole != null ? newRole : old.getRole(), isActive != null ? isActive : old.isActive());
+                    updated.setCreatedAt(old.getCreatedAt());
+                    currentDisplayedUsers.set(i, updated);
+                    break;
+                }
+            }
+        }
+        if (cachedUsers != null) {
+            for (int i = 0; i < cachedUsers.size(); i++) {
+                if (cachedUsers.get(i).getId() == userId) {
+                    User old = cachedUsers.get(i);
+                    User updated = new User(old.getId(), old.getUsername(), newRole != null ? newRole : old.getRole(), isActive != null ? isActive : old.isActive());
+                    updated.setCreatedAt(old.getCreatedAt());
+                    cachedUsers.set(i, updated);
+                    break;
+                }
+            }
+        }
+    }
+
     private void bindEvents() {
         sortComboBox.addActionListener(e -> loadUsers());
         refreshButton.addActionListener(e -> refresh());
@@ -457,12 +499,22 @@ public class AdminUsersPanel extends JPanel {
             dialog.setVisible(true);
 
             if (dialog.isApproved()) {
-                if (userDAO.updateUserRole(userId, newRole)) {
-                    cachedUsers = null;
-                    SwingUtilities.invokeLater(this::refresh);
-                } else {
-                    new InfoDialog(parentWindow, "Database Error", "Failed to update role.").setVisible(true);
-                }
+                updateListObjects(userId, newRole, null);
+                executeOptimisticUpdate();
+
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        userDAO.updateUserRole(userId, newRole);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                    }
+                }.execute();
+
+                new SuccessDialog(parentWindow, "Role Changed", "The user's role has been successfully updated to " + displayNewRole + ".").setVisible(true);
             }
         });
 
@@ -492,9 +544,22 @@ public class AdminUsersPanel extends JPanel {
             dialog.setVisible(true);
 
             if (dialog.isApproved()) {
-                userDAO.updateUserStatus(userId, currentlyDisabled);
-                cachedUsers = null;
-                SwingUtilities.invokeLater(this::refresh);
+                updateListObjects(userId, null, currentlyDisabled);
+                executeOptimisticUpdate();
+
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        userDAO.updateUserStatus(userId, currentlyDisabled);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                    }
+                }.execute();
+
+                new SuccessDialog(parentWindow, "Status Changed", "The user has been successfully " + (currentlyDisabled ? "activated." : "disabled.")).setVisible(true);
             }
         });
     }
@@ -506,7 +571,7 @@ public class AdminUsersPanel extends JPanel {
     }
 
     public void refresh() {
-        clearCache(); // Force data to fetch completely fresh
+        clearCache();
 
         if (searchField != null) {
             isUpdatingPlaceholder = true;

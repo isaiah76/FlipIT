@@ -43,6 +43,7 @@ public class FilesPanel extends JPanel {
     private SwingWorker<List<UploadedFile>, Void> fileLoaderWorker;
     private final Timer searchDebounceTimer;
 
+    private List<UploadedFile> currentDisplayedFiles = new ArrayList<>();
     private List<UploadedFile> cachedFiles = null;
     private long cacheTimestamp = 0;
     private static final long CACHE_TTL_MS = 30_000;
@@ -193,6 +194,12 @@ public class FilesPanel extends JPanel {
         }
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedFiles != null) {
+            renderList(currentDisplayedFiles, sortComboBox.getSelectedIndex());
+        }
+    }
+
     private void loadFiles() {
         if (fileListPanel == null) return;
 
@@ -207,7 +214,8 @@ public class FilesPanel extends JPanel {
         final int sortIdx = sortComboBox.getSelectedIndex();
 
         if (searchQuery.isEmpty() && typeIdx == 0 && cachedFiles != null && (System.currentTimeMillis() - cacheTimestamp < CACHE_TTL_MS)) {
-            renderList(new ArrayList<>(cachedFiles), sortIdx);
+            currentDisplayedFiles = new ArrayList<>(cachedFiles);
+            renderList(currentDisplayedFiles, sortIdx);
             return;
         }
 
@@ -250,12 +258,14 @@ public class FilesPanel extends JPanel {
                     List<UploadedFile> filtered = get();
                     if (filtered == null) return;
 
+                    currentDisplayedFiles = new ArrayList<>(filtered);
+
                     if (searchQuery.isEmpty() && typeIdx == 0) {
                         cachedFiles = new ArrayList<>(filtered);
                         cacheTimestamp = System.currentTimeMillis();
                     }
 
-                    renderList(filtered, sortIdx);
+                    renderList(currentDisplayedFiles, sortIdx);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -487,21 +497,31 @@ public class FilesPanel extends JPanel {
 
             if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                 File target = fc.getSelectedFile();
-                byte[] fileData = fileDAO.getFileData(fe.getId());
-
                 Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
-                if (fileData != null) {
-                    try {
-                        Files.write(target.toPath(), fileData);
-                        new SuccessDialog(parentWindow, "Success", "File downloaded successfully!").setVisible(true);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        new InfoDialog(parentWindow, "Error", "Error saving file.").setVisible(true);
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        byte[] fileData = fileDAO.getFileData(fe.getId());
+                        if (fileData != null) {
+                            Files.write(target.toPath(), fileData);
+                        } else {
+                            throw new RuntimeException("File not found in database.");
+                        }
+                        return null;
                     }
-                } else {
-                    new InfoDialog(parentWindow, "File Not Found", "This file is missing.").setVisible(true);
-                }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get();
+                            new SuccessDialog(parentWindow, "Success", "File downloaded successfully!").setVisible(true);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            new InfoDialog(parentWindow, "Error", "Error saving file.").setVisible(true);
+                        }
+                    }
+                }.execute();
             }
         });
 
@@ -514,9 +534,28 @@ public class FilesPanel extends JPanel {
             dialog.setVisible(true);
 
             if (dialog.isApproved()) {
-                fileDAO.deleteFile(fe.getId());
-                cachedFiles = null;
-                refresh();
+                if (currentDisplayedFiles != null) currentDisplayedFiles.removeIf(f -> f.getId() == fe.getId());
+                if (cachedFiles != null) cachedFiles.removeIf(f -> f.getId() == fe.getId());
+                executeOptimisticUpdate();
+
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        fileDAO.deleteFile(fe.getId());
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            refresh();
+                            new InfoDialog(parentWindow, "Error", "Failed to delete file.").setVisible(true);
+                        }
+                    }
+                }.execute();
             }
         });
 

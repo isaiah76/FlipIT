@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-// TODO: fix caching, export deck, setup installer
+// TODO: export deck, setup installer
 
 public class Main {
     public static void main(String[] args) {

@@ -7,6 +7,7 @@ import com.flipit.models.Deck;
 import com.flipit.models.User;
 import com.flipit.ui.dialogs.EditCardDialog;
 import com.flipit.ui.dialogs.InfoDialog;
+import com.flipit.ui.dialogs.SuccessDialog;
 import com.flipit.ui.dialogs.WarningDialog;
 import com.flipit.util.ImageUtil;
 import com.flipit.util.IconUtil;
@@ -19,6 +20,7 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -39,6 +41,8 @@ public class CardEditorPanel extends JPanel {
 
     private JPanel rowsContainer;
     private SwingWorker<List<Card>, Void> cardLoaderWorker;
+
+    private List<Card> currentDisplayedCards = new ArrayList<>();
 
     private int s(int val) {
         return ImageUtil.scale((int) Math.round(val * 1.2f));
@@ -178,6 +182,26 @@ public class CardEditorPanel extends JPanel {
         addCardBtn.addActionListener(e -> showCardDialog(null));
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedCards == null) return;
+        rowsContainer.removeAll();
+
+        if (currentDisplayedCards.isEmpty()) {
+            JPanel empty = buildEmptyState();
+            empty.setAlignmentX(Component.CENTER_ALIGNMENT);
+            rowsContainer.add(empty);
+        } else {
+            for (int i = 0; i < currentDisplayedCards.size(); i++) {
+                JPanel row = buildCardRow(currentDisplayedCards.get(i), i + 1, currentDisplayedCards.size());
+                row.setAlignmentX(Component.LEFT_ALIGNMENT);
+                rowsContainer.add(row);
+                if (i < currentDisplayedCards.size() - 1) rowsContainer.add(Box.createVerticalStrut(s(10)));
+            }
+        }
+        rowsContainer.revalidate();
+        rowsContainer.repaint();
+    }
+
     private void loadCards() {
         if (rowsContainer == null || deck == null) return;
 
@@ -206,31 +230,13 @@ public class CardEditorPanel extends JPanel {
                 if (isCancelled()) return;
                 try {
                     List<Card> cards = get();
-                    rowsContainer.removeAll();
-
-                    if (cards.isEmpty()) {
-                        JPanel empty = buildEmptyState();
-                        empty.setAlignmentX(Component.CENTER_ALIGNMENT);
-                        rowsContainer.add(empty);
-                    } else {
-                        for (int i = 0; i < cards.size(); i++) {
-                            JPanel row = buildCardRow(cards.get(i), i + 1, cards.size());
-                            row.setAlignmentX(Component.LEFT_ALIGNMENT);
-                            rowsContainer.add(row);
-                            if (i < cards.size() - 1) rowsContainer.add(Box.createVerticalStrut(s(10)));
-                        }
-                    }
-
-                    rowsContainer.revalidate();
-                    rowsContainer.repaint();
-                } catch (
-                        Exception ex) {
+                    currentDisplayedCards = new ArrayList<>(cards);
+                    executeOptimisticUpdate();
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
-        }
-
-        ;
+        };
         cardLoaderWorker.execute();
     }
 
@@ -278,7 +284,7 @@ public class CardEditorPanel extends JPanel {
         p.setBorder(BorderFactory.createEmptyBorder(s(25), 0, 0, 0));
 
         JLabel ico = new JLabel("📝");
-        ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, (int) f(22f))); // Keep specific emoji font, but scale
+        ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, (int) f(22f)));
         ico.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel msg = new JLabel("No cards yet.");
@@ -365,10 +371,31 @@ public class CardEditorPanel extends JPanel {
             warn.setVisible(true);
 
             if (warn.isApproved()) {
-                progressDAO.adjustHighscoresForCardDeletion(card.getId(), deck.getId());
-                cardDAO.deleteCard(card.getId());
-                mainPanel.clearActiveSession();
-                loadCards();
+                currentDisplayedCards.removeIf(c -> c.getId() == card.getId());
+                executeOptimisticUpdate();
+
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        progressDAO.adjustHighscoresForCardDeletion(card.getId(), deck.getId());
+                        cardDAO.deleteCard(card.getId());
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get();
+                            mainPanel.clearActiveSession();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            loadCards();
+                            new InfoDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Error", "Failed to delete card.").setVisible(true);
+                        }
+                    }
+                }.execute();
+
+                new SuccessDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Deleted", "Card deleted successfully!").setVisible(true);
             }
         });
 
@@ -489,10 +516,6 @@ public class CardEditorPanel extends JPanel {
         dialog.setVisible(true);
 
         if (dialog.isApproved()) {
-            boolean ok;
-            boolean addedNew = false;
-            boolean answerChanged = false;
-
             String q = dialog.getQuestion();
             String a = dialog.getAnswerA();
             String b = dialog.getAnswerB();
@@ -501,41 +524,97 @@ public class CardEditorPanel extends JPanel {
             String ca = dialog.getCorrectAnswer();
 
             if (existing == null) {
-                int newId = cardDAO.addCard(new Card(deck.getId(), q, a, b, c, d, ca));
-                ok = newId > 0;
-                addedNew = true;
+                Card tempCard = new Card(deck.getId(), q, a, b, c, d, ca);
+                tempCard.setId(-1);
+                currentDisplayedCards.add(tempCard);
+                executeOptimisticUpdate();
+
+                new SwingWorker<Integer, Void>() {
+                    @Override
+                    protected Integer doInBackground() throws Exception {
+                        int newId = cardDAO.addCard(new Card(deck.getId(), q, a, b, c, d, ca));
+                        if (newId <= 0) {
+                            throw new RuntimeException("Failed to insert card.");
+                        }
+                        progressDAO.incrementHighscoreTotalCards(deck.getId());
+                        return newId;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            int newId = get();
+                            tempCard.setId(newId);
+                            mainPanel.clearActiveSession();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            currentDisplayedCards.remove(tempCard);
+                            executeOptimisticUpdate();
+                            new InfoDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Error", "Failed to save the card.").setVisible(true);
+                        }
+                    }
+                }.execute();
+
+                new SuccessDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Success", "Card added successfully!").setVisible(true);
+
             } else {
-                if (!existing.getCorrectAnswer().equals(ca)) {
-                    answerChanged = true;
-                }
+                String oldQ = existing.getQuestion();
+                String oldA = existing.getAnswerA();
+                String oldB = existing.getAnswerB();
+                String oldC = existing.getAnswerC();
+                String oldD = existing.getAnswerD();
+                String oldCa = existing.getCorrectAnswer();
+
+                boolean answerChanged = !oldCa.equals(ca);
+
                 existing.setQuestion(q);
                 existing.setAnswerA(a);
                 existing.setAnswerB(b);
                 existing.setAnswerC(c);
                 existing.setAnswerD(d);
                 existing.setCorrectAnswer(ca);
-                ok = cardDAO.updateCard(existing);
+                executeOptimisticUpdate();
+
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        boolean ok = cardDAO.updateCard(existing);
+                        if (!ok) {
+                            throw new RuntimeException("Failed to update card.");
+                        }
+
+                        if (answerChanged) {
+                            progressDAO.adjustHighscoresForAnswerChange(existing.getId(), deck.getId());
+                            progressDAO.resetSingleCardProgress(existing.getId());
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get();
+                            if (answerChanged) {
+                                mainPanel.clearActiveSession();
+                            } else {
+                                mainPanel.syncActiveSession();
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            existing.setQuestion(oldQ);
+                            existing.setAnswerA(oldA);
+                            existing.setAnswerB(oldB);
+                            existing.setAnswerC(oldC);
+                            existing.setAnswerD(oldD);
+                            existing.setCorrectAnswer(oldCa);
+                            executeOptimisticUpdate();
+                            new InfoDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Error", "Failed to update the card.").setVisible(true);
+                        }
+                    }
+                }.execute();
+
+                new SuccessDialog(SwingUtilities.getWindowAncestor(CardEditorPanel.this), "Success", "Card updated successfully!").setVisible(true);
             }
-
-            if (!ok) {
-                new InfoDialog(SwingUtilities.getWindowAncestor(this), "Error", "Failed to save the card.").setVisible(true);
-                return;
-            }
-
-            if (addedNew) {
-                progressDAO.incrementHighscoreTotalCards(deck.getId());
-                mainPanel.clearActiveSession();
-
-            } else if (answerChanged) {
-                progressDAO.adjustHighscoresForAnswerChange(existing.getId(), deck.getId());
-                progressDAO.resetSingleCardProgress(existing.getId());
-                mainPanel.clearActiveSession();
-
-            } else {
-                mainPanel.syncActiveSession();
-            }
-
-            SwingUtilities.invokeLater(this::loadCards);
         }
     }
 

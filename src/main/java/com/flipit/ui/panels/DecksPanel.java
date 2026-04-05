@@ -16,9 +16,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.plaf.basic.BasicButtonUI;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -61,6 +58,8 @@ public class DecksPanel extends JPanel {
 
     private SwingWorker<List<DeckRenderData>, Void> deckLoaderWorker;
     private final Timer searchDebounceTimer;
+
+    private List<DeckRenderData> currentDisplayedDecks = new ArrayList<>();
 
     private List<DeckRenderData> cachedMyDecks = null;
     private List<DeckRenderData> cachedSavedDecks = null;
@@ -312,6 +311,12 @@ public class DecksPanel extends JPanel {
         }
     }
 
+    private void executeOptimisticUpdate() {
+        if (currentDisplayedDecks != null) {
+            renderList(currentDisplayedDecks, sortComboBox.getSelectedIndex(), isSavedView);
+        }
+    }
+
     private void loadDecks() {
         if (deckGridPanel == null) return;
 
@@ -327,10 +332,12 @@ public class DecksPanel extends JPanel {
 
         if (searchQuery.isEmpty()) {
             if (currentSavedView && cachedSavedDecks != null && (System.currentTimeMillis() - cacheTimestampSavedDecks < CACHE_TTL_MS)) {
-                renderList(cachedSavedDecks, sortIdx, true);
+                currentDisplayedDecks = new ArrayList<>(cachedSavedDecks);
+                renderList(currentDisplayedDecks, sortIdx, true);
                 return;
             } else if (!currentSavedView && cachedMyDecks != null && (System.currentTimeMillis() - cacheTimestampMyDecks < CACHE_TTL_MS)) {
-                renderList(cachedMyDecks, sortIdx, false);
+                currentDisplayedDecks = new ArrayList<>(cachedMyDecks);
+                renderList(currentDisplayedDecks, sortIdx, false);
                 return;
             }
         }
@@ -447,17 +454,19 @@ public class DecksPanel extends JPanel {
                     List<DeckRenderData> renderList = get();
                     if (renderList == null) return;
 
+                    currentDisplayedDecks = new ArrayList<>(renderList);
+
                     if (searchQuery.isEmpty()) {
                         if (currentSavedView) {
-                            cachedSavedDecks = renderList;
+                            cachedSavedDecks = new ArrayList<>(renderList);
                             cacheTimestampSavedDecks = System.currentTimeMillis();
                         } else {
-                            cachedMyDecks = renderList;
+                            cachedMyDecks = new ArrayList<>(renderList);
                             cacheTimestampMyDecks = System.currentTimeMillis();
                         }
                     }
 
-                    renderList(renderList, sortIdx, currentSavedView);
+                    renderList(currentDisplayedDecks, sortIdx, currentSavedView);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -468,6 +477,8 @@ public class DecksPanel extends JPanel {
     }
 
     private void renderList(List<DeckRenderData> listToRender, int sortIdx, boolean currentSavedView) {
+        if (listToRender == null) return;
+
         listToRender.sort((d1, d2) -> {
             if (sortIdx == 1) return d1.deck.getCreatedAt().compareTo(d2.deck.getCreatedAt());
             if (sortIdx == 2) return Integer.compare(d2.deck.getCardCount(), d1.deck.getCardCount());
@@ -1043,7 +1054,9 @@ public class DecksPanel extends JPanel {
                             @Override
                             protected void done() {
                                 mainPanel.invalidateDeckCaches();
-                                loadDecks();
+                                if (currentDisplayedDecks != null) currentDisplayedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                                if (cachedSavedDecks != null) cachedSavedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+                                executeOptimisticUpdate();
                             }
                         }.execute();
                     });
@@ -1295,7 +1308,7 @@ public class DecksPanel extends JPanel {
                         @Override
                         protected void done() {
                             try {
-                                get(); // Catch DB or write errors
+                                get();
                                 new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", "File downloaded successfully!").setVisible(true);
                             } catch (Exception ex) {
                                 ex.printStackTrace();
@@ -1409,6 +1422,9 @@ public class DecksPanel extends JPanel {
         dialog.setVisible(true);
 
         if (dialog.isApproved()) {
+            deck.setPublic(willBePublic);
+            executeOptimisticUpdate();
+
             new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() {
@@ -1420,16 +1436,17 @@ public class DecksPanel extends JPanel {
                 protected void done() {
                     try {
                         get();
-                        deck.setPublic(willBePublic);
                         mainPanel.invalidateDeckCaches();
-                        refresh();
-                        new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", willBePublic ? "Deck published successfully!" : "Deck is now private!").setVisible(true);
                     } catch (Exception ex) {
                         ex.printStackTrace();
+                        deck.setPublic(!willBePublic); // Fallback
+                        executeOptimisticUpdate();
                         new InfoDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Error", "Failed to update visibility.").setVisible(true);
                     }
                 }
             }.execute();
+
+            new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", willBePublic ? "Deck published successfully!" : "Deck is now private!").setVisible(true);
         }
     }
 
@@ -1542,6 +1559,10 @@ public class DecksPanel extends JPanel {
                     }
                 }
 
+                String oldTitle = deck.getTitle();
+                deck.setTitle(name);
+                executeOptimisticUpdate();
+
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() {
@@ -1554,14 +1575,16 @@ public class DecksPanel extends JPanel {
                         try {
                             get();
                             mainPanel.invalidateDeckCaches();
-                            refresh();
-                            new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", "Deck renamed successfully!").setVisible(true);
                         } catch (Exception ex) {
                             ex.printStackTrace();
+                            deck.setTitle(oldTitle);
+                            executeOptimisticUpdate();
                             new InfoDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Error", "Failed to rename deck.").setVisible(true);
                         }
                     }
                 }.execute();
+
+                new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", "Deck renamed successfully!").setVisible(true);
             }
         }
     }
@@ -1597,11 +1620,14 @@ public class DecksPanel extends JPanel {
                 }
             }
 
+            List<String> oldTags = deck.getTags();
+            deck.setTags(tagList);
+            executeOptimisticUpdate();
+
             new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() {
                     deckDAO.updateDeckTags(deck.getId(), tagList);
-                    deck.setTags(tagList);
                     return null;
                 }
 
@@ -1610,14 +1636,16 @@ public class DecksPanel extends JPanel {
                     try {
                         get();
                         mainPanel.invalidateDeckCaches();
-                        refresh();
-                        new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", "Tags updated successfully!").setVisible(true);
                     } catch (Exception ex) {
                         ex.printStackTrace();
+                        deck.setTags(oldTags);
+                        executeOptimisticUpdate();
                         new InfoDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Error", "Failed to update tags.").setVisible(true);
                     }
                 }
             }.execute();
+
+            new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Success", "Tags updated successfully!").setVisible(true);
         }
     }
 
@@ -1629,6 +1657,11 @@ public class DecksPanel extends JPanel {
         dialog.setVisible(true);
 
         if (dialog.isApproved()) {
+            if (currentDisplayedDecks != null) currentDisplayedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+            if (cachedMyDecks != null) cachedMyDecks.removeIf(d -> d.deck.getId() == deck.getId());
+            if (cachedSavedDecks != null) cachedSavedDecks.removeIf(d -> d.deck.getId() == deck.getId());
+            executeOptimisticUpdate();
+
             new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
@@ -1651,14 +1684,15 @@ public class DecksPanel extends JPanel {
                     try {
                         get();
                         mainPanel.invalidateDeckCaches();
-                        refresh();
-                        new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Deleted", "Deck deleted successfully!").setVisible(true);
                     } catch (Exception ex) {
                         ex.printStackTrace();
+                        refresh();
                         new InfoDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Error", "Failed to delete deck. Database conflict.").setVisible(true);
                     }
                 }
             }.execute();
+
+            new SuccessDialog(SwingUtilities.getWindowAncestor(DecksPanel.this), "Deleted", "Deck deleted successfully!").setVisible(true);
         }
     }
 
