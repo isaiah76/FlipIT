@@ -135,11 +135,14 @@ public class EditCardDialog extends JDialog {
             }
         });
 
-        int maxWidth = owner != null ? owner.getWidth() - ImageUtil.scale(40) : ImageUtil.scale(550);
-        int targetWidth = Math.min(ImageUtil.scale(550), maxWidth);
+        int baseWidth = ImageUtil.scale(550);
+        int maxWidth = owner != null ? owner.getWidth() - ImageUtil.scale(40) : baseWidth;
+        int targetWidth = Math.min(baseWidth, maxWidth);
 
-        contentPane.setPreferredSize(null);
-        contentPane.setMinimumSize(new Dimension(targetWidth, ImageUtil.scale(420)));
+        Dimension targetSize = new Dimension(targetWidth, ImageUtil.scale(450));
+
+        contentPane.setPreferredSize(targetSize);
+        contentPane.setMinimumSize(targetSize);
     }
 
     private void populateData() {

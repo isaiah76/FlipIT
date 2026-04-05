@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -247,18 +248,47 @@ public class DecksPanel extends JPanel {
             }
         });
 
+        addDeckBtn.setText("+ ADD DECK");
         addDeckBtn.setPreferredSize(new Dimension(ImageUtil.scale(130), ImageUtil.scale(50)));
-        addDeckBtn.setText("ADD DECK");
-        addDeckBtn.setIcon(IconUtil.getIcon("PLUS", Color.WHITE, ImageUtil.scale(16)));
-        addDeckBtn.setIconTextGap(ImageUtil.scale(8));
-        addDeckBtn.setFont(baseFont.deriveFont(Font.BOLD, 13f * sf));
-        addDeckBtn.setBackground(Color.decode("#3b82f6"));
-        addDeckBtn.setForeground(Color.WHITE);
-        addDeckBtn.setFocusPainted(false);
+        addDeckBtn.setContentAreaFilled(false);
         addDeckBtn.setBorderPainted(false);
-        addDeckBtn.setBorder(BorderFactory.createEmptyBorder(ImageUtil.scale(6), ImageUtil.scale(12), ImageUtil.scale(6), ImageUtil.scale(12)));
+        addDeckBtn.setFocusPainted(false);
+        addDeckBtn.setFont(baseFont.deriveFont(Font.BOLD, 13f * sf));
+        addDeckBtn.setForeground(Color.WHITE);
         addDeckBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        addDeckBtn.putClientProperty("JButton.buttonType", "roundRect");
+
+        addDeckBtn.setUI(new BasicButtonUI() {
+            boolean hov = false;
+
+            {
+                addDeckBtn.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        hov = true;
+                        addDeckBtn.repaint();
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        hov = false;
+                        addDeckBtn.repaint();
+                    }
+                });
+            }
+
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new GradientPaint(0, 0,
+                        hov ? Color.decode("#2563eb") : Color.decode("#3b82f6"),
+                        c.getWidth(), c.getHeight(),
+                        hov ? Color.decode("#1e40af") : Color.decode("#1d4ed8")));
+                g2.fill(new RoundRectangle2D.Double(0, 0, c.getWidth(), c.getHeight(), ImageUtil.scale(12), ImageUtil.scale(12)));
+                g2.dispose();
+                super.paint(g, c);
+            }
+        });
 
         root.setFocusable(true);
         MouseAdapter clearFocus = new MouseAdapter() {

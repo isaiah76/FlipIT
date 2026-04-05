@@ -135,7 +135,7 @@ public class CardEditorPanel extends JPanel {
             }
         });
 
-        addCardBtn.setPreferredSize(new Dimension(s(80), s(30)));
+        addCardBtn.setPreferredSize(new Dimension(s(110), s(30)));
         addCardBtn.setContentAreaFilled(false);
         addCardBtn.setBorderPainted(false);
         addCardBtn.setFocusPainted(false);
@@ -210,7 +210,7 @@ public class CardEditorPanel extends JPanel {
 
                     if (cards.isEmpty()) {
                         JPanel empty = buildEmptyState();
-                        empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        empty.setAlignmentX(Component.CENTER_ALIGNMENT);
                         rowsContainer.add(empty);
                     } else {
                         for (int i = 0; i < cards.size(); i++) {
@@ -223,11 +223,14 @@ public class CardEditorPanel extends JPanel {
 
                     rowsContainer.revalidate();
                     rowsContainer.repaint();
-                } catch (Exception ex) {
+                } catch (
+                        Exception ex) {
                     ex.printStackTrace();
                 }
             }
-        };
+        }
+
+        ;
         cardLoaderWorker.execute();
     }
 
@@ -637,7 +640,7 @@ public class CardEditorPanel extends JPanel {
         headerPanel.add(deckTitle, gbc);
         addCardBtn = new JButton();
         addCardBtn.setPreferredSize(new Dimension(80, 30));
-        addCardBtn.setText("+ Add Card");
+        addCardBtn.setText("+ ADD CARD");
         gbc = new GridBagConstraints();
         gbc.gridx = 1;
         gbc.gridy = 1;
