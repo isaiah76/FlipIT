@@ -591,7 +591,7 @@ public class QuizPanel extends JPanel {
                 @Override
                 protected Void doInBackground() {
                     for (Card c : skippedCards) {
-                        progressDAO.setAnswered(user.getId(), c.getId(), false, "S");
+                        progressDAO.setAnswered(user.getId(), c.getId(), true, "S");
                     }
                     return null;
                 }
@@ -735,8 +735,7 @@ public class QuizPanel extends JPanel {
             boolean correct = actualAnswer.equals(c.getCorrectAnswer());
             questionStatusLbl.setText(correct ? "CORRECT" : "INCORRECT");
             questionStatusLbl.setForeground(correct ? Color.decode("#10b981") : Color.decode("#ef4444"));
-        }
-        else {
+        } else {
             submitted = false;
             selected = null;
 
@@ -824,6 +823,7 @@ public class QuizPanel extends JPanel {
 
         if (session.currentIndex + 1 >= session.cards.size()) {
             nextBtn.setText("Finish");
+            progressBar.setValue(100);
         }
 
         this.revalidate();
@@ -832,7 +832,7 @@ public class QuizPanel extends JPanel {
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() {
-                progressDAO.setAnswered(user.getId(), cur.getId(), correct, choice);
+                progressDAO.setAnswered(user.getId(), cur.getId(), true, choice);
                 return null;
             }
 
