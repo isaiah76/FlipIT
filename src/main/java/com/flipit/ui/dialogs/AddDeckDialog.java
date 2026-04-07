@@ -173,7 +173,7 @@ public class AddDeckDialog extends JDialog {
         deckNameField = new JTextField();
         panel3.add(deckNameField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         lbl2 = new JLabel();
-        lbl2.setText("Tags (comma separated, max 6):");
+        lbl2.setText("Tags (comma separated, max 6, optional):");
         panel3.add(lbl2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         tagsField = new JTextField();
         panel3.add(tagsField, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -187,4 +187,5 @@ public class AddDeckDialog extends JDialog {
     public JComponent $$$getRootComponent$$$() {
         return contentPane;
     }
+
 }

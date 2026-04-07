@@ -171,7 +171,7 @@ public class GeminiService {
                         !correct.equals("C") && !correct.equals("D")) correct = "A";
 
                 result.add(new Card(0,
-                        0, // Dummy deck_id, handled by the Dialog
+                        0,
                         cleanText(c.getString("question")),
                         cleanText(c.getString("answer_a")),
                         cleanText(c.getString("answer_b")),

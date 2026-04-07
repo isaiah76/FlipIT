@@ -419,7 +419,7 @@ public class GenerationDialog extends JDialog {
         gbc.insets = new Insets(0, 0, 16, 0);
         settingsCard.add(titleField, gbc);
         tagsLbl = new JLabel();
-        tagsLbl.setText("Tags (comma separated, optional)");
+        tagsLbl.setText("Tags (comma separated, max 6, optional)");
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 4;

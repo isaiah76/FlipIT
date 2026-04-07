@@ -31,7 +31,13 @@ public class SplashFrame extends JWindow {
         content.setOpaque(false);
 
         JLabel title = new JLabel("FlipIT", SwingConstants.CENTER);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 56));
+        Font logoFont = UIManager.getFont("logoFont");
+        if (logoFont != null) {
+            title.setFont(logoFont.deriveFont(56f));
+        } else {
+            title.setFont(new Font("SansSerif", Font.BOLD, 56));
+        }
+
         title.setForeground(Color.WHITE);
         content.add(title, BorderLayout.CENTER);
 

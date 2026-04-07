@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-// TODO: setup installer
+// TODO: quizpanel font, setup installer
 public class Main {
     public static void main(String[] args) {
         String os = System.getProperty("os.name").toLowerCase();
@@ -102,6 +102,10 @@ public class Main {
 
                         AppFrame app = new AppFrame();
                         app.setVisible(true);
+                        app.setAlwaysOnTop(true);
+                        app.toFront();
+                        app.requestFocus();
+                        app.setAlwaysOnTop(false);
 
                         if (autoUser != null) {
                             app.showMain(autoUser);

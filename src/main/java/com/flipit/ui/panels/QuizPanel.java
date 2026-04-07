@@ -200,18 +200,25 @@ public class QuizPanel extends JPanel {
         backBtn.setContentAreaFilled(false);
         backBtn.setBorderPainted(false);
         backBtn.setFocusPainted(false);
-        backBtn.setFont(baseFont.deriveFont(Font.BOLD, 13f * sf));
+        backBtn.setFont(baseFont.deriveFont(Font.BOLD, 16f * sf));
         backBtn.setForeground(Color.decode("#2563eb"));
         backBtn.setIconTextGap(ImageUtil.scale(8));
-        backBtn.setIcon(IconUtil.getIcon("BACK", Color.decode("#2563eb"), ImageUtil.scale(14)));
+        backBtn.setIcon(IconUtil.getIcon("BACK", Color.decode("#2563eb"), ImageUtil.scale(16)));
         backBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         backBtn.setText("Back");
 
+        deckNameLbl.setFont(baseFont.deriveFont(Font.BOLD, 20f * sf));
+        deckNameLbl.setForeground(Color.decode("#0f172a"));
+
+        counterLbl.setFont(baseFont.deriveFont(Font.BOLD, 16f * sf));
+        counterLbl.setForeground(Color.decode("#64748b"));
+
         Container headerPanel = backBtn.getParent();
         if (headerPanel.getLayout() instanceof BorderLayout) {
-            ((BorderLayout) headerPanel.getLayout()).setVgap(ImageUtil.scale(8));
+            ((BorderLayout) headerPanel.getLayout()).setVgap(ImageUtil.scale(12));
             headerPanel.setFont(baseFont);
         }
+
 
         ttsToggleBtn.setContentAreaFilled(false);
         ttsToggleBtn.setBorderPainted(false);
