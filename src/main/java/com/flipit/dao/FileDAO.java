@@ -56,7 +56,7 @@ public class FileDAO {
                 if (rs.next()) return rs.getBytes("file_data");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error retrieving file data", e);
+            throw new RuntimeException("Database error getting file data", e);
         }
         return null;
     }
@@ -91,7 +91,7 @@ public class FileDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error retrieving all user files", e);
+            throw new RuntimeException("Database error getting all user files", e);
         }
         return list;
     }

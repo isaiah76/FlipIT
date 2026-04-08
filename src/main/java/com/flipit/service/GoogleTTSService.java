@@ -22,9 +22,7 @@ public class GoogleTTSService {
 
                 String encoded = URLEncoder.encode(chunk, "UTF-8");
                 String urlStr = "https://translate.google.com/translate_tts?ie=UTF-8"
-                        + "&q=" + encoded
-                        + "&tl=en"
-                        + "&client=gtx";
+                        + "&q=" + encoded + "&tl=en" + "&client=gtx";
 
                 URL url = new URL(urlStr);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();

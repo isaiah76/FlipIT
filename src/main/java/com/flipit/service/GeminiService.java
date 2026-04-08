@@ -17,7 +17,7 @@ public class GeminiService {
 
     private static final int MAX_RETRIES = 5;
     private static final long INITIAL_WAIT_MS = 10_000;
-    private static final double BACKOFF_MULTIPLIER = 2.0;
+    private static final double BACKOFF_MULTIPLIER = 2.0; // retry if fails
 
     private String apiKey;
     private volatile String rateLimitStatus = null;
@@ -25,7 +25,7 @@ public class GeminiService {
     public GeminiService() {
         try (InputStream in = GeminiService.class.getResourceAsStream("/config.properties")) {
             if (in == null) {
-                System.err.println("WARNING: config.properties not found on classpath!");
+                System.err.println("config.properties not found!");
                 this.apiKey = null;
                 return;
             }
@@ -35,17 +35,17 @@ public class GeminiService {
             this.apiKey = props.getProperty("gemini.api.key");
 
             if (this.apiKey == null || this.apiKey.trim().isEmpty()) {
-                System.err.println("WARNING: gemini.api.key is missing from config.properties!");
+                System.err.println(" gemini.api.key is missing from config.properties!");
             }
         } catch (IOException e) {
-            System.err.println("Failed to load config.properties for GeminiService: " + e.getMessage());
+            System.err.println("Failed to load config.properties : " + e.getMessage());
             this.apiKey = null;
         }
     }
 
     public List<Card> generateCards(String studyText, int cardCount) throws IOException, GeminiException {
         if (this.apiKey == null || this.apiKey.trim().isEmpty()) {
-            throw new GeminiException("API Key is missing. Please add gemini.api.key to your config.properties file.");
+            throw new GeminiException("API Key is missing.");
         }
 
         String prompt = buildPrompt(studyText, cardCount);

@@ -28,7 +28,7 @@ public class AdminStatsDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error fetching bulk dashboard stats", e);
+            throw new RuntimeException("Database error fetching all dashboard stats", e);
         }
         return stats;
     }

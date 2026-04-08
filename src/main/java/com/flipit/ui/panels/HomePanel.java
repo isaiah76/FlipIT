@@ -201,13 +201,13 @@ public class HomePanel extends JPanel {
 
                 g2.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 12f * ImageUtil.getScaleFactor()));
                 g2.setColor(accentColor);
-                g2.drawString("FLIPIT · QUICK TIP", ImageUtil.scale(25), ImageUtil.scale(30));
+                g2.drawString("QUICK TIP", ImageUtil.scale(25), ImageUtil.scale(30));
 
                 g2.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 15f * ImageUtil.getScaleFactor()));
                 g2.setColor(Color.decode("#0f172a"));
                 g2.drawString("Upload any document", ImageUtil.scale(25), ImageUtil.scale(60));
                 g2.drawString("to instantly generate", ImageUtil.scale(25), ImageUtil.scale(80));
-                g2.drawString("smart flashcards.", ImageUtil.scale(25), ImageUtil.scale(100));
+                g2.drawString("flashcards.", ImageUtil.scale(25), ImageUtil.scale(100));
 
                 g2.setColor(accentColor);
                 g2.setStroke(new BasicStroke(3f));

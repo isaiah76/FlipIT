@@ -38,9 +38,7 @@ public class CardProgressDAO {
     }
 
     public int getAnsweredCount(int userId, int deckId) {
-        String sql = "SELECT COUNT(*) FROM card_progress cp " +
-                "JOIN cards ca ON ca.id = cp.card_id " +
-                "WHERE cp.user_id = ? AND ca.deck_id = ?";
+        String sql = "SELECT COUNT(*) FROM card_progress cp " + "JOIN cards ca ON ca.id = cp.card_id " + "WHERE cp.user_id = ? AND ca.deck_id = ?";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -173,17 +171,18 @@ public class CardProgressDAO {
         return answersMap;
     }
 
-    public BestScoreResult updateAndGetBestScore(int userId, int deckId, int currentScore, int totalCards) {
+   public BestScoreResult updateAndGetBestScore(int userId, int deckId, int currentScore, int totalCards) {
         int oldBest = 0, oldTotal = 0;
-        String readSql =
-                "SELECT best_score, total_cards FROM highscores " +
-                        "WHERE user_id = ? AND deck_id = ?";
+        boolean recordExists = false;
+
+        String readSql = "SELECT best_score, total_cards FROM highscores WHERE user_id = ? AND deck_id = ?";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(readSql)) {
             ps.setInt(1, userId);
             ps.setInt(2, deckId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    recordExists = true;
                     oldBest = rs.getInt("best_score");
                     oldTotal = rs.getInt("total_cards");
                 }
@@ -192,46 +191,35 @@ public class CardProgressDAO {
             throw new RuntimeException("Database error reading best score", e);
         }
 
-        String upsertSql =
-                "INSERT INTO highscores (user_id, deck_id, best_score, total_cards) " +
-                        "VALUES (?, ?, ?, ?) " +
-                        "ON DUPLICATE KEY UPDATE " +
-                        "  best_score  = IF(VALUES(best_score)  / NULLIF(VALUES(total_cards), 0) " +
-                        "                 > best_score           / NULLIF(total_cards, 0), " +
-                        "                   VALUES(best_score),  best_score), " +
-                        "  total_cards = IF(VALUES(best_score)  / NULLIF(VALUES(total_cards), 0) " +
-                        "                 > best_score           / NULLIF(total_cards, 0), " +
-                        "                   VALUES(total_cards), total_cards)";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(upsertSql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, deckId);
-            ps.setInt(3, currentScore);
-            ps.setInt(4, totalCards);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Database error updating best score", e);
-        }
-
         double oldPct = oldTotal == 0 ? 0.0 : (double) oldBest / oldTotal;
         double newPct = totalCards == 0 ? 0.0 : (double) currentScore / totalCards;
-        boolean isNewBest = newPct > oldPct && currentScore > 0;
+        boolean isNewBest = false;
 
-        int shownPct = isNewBest
-                ? (totalCards == 0 ? 100 : currentScore * 100 / totalCards)
-                : (oldTotal == 0 ? 0 : oldBest * 100 / oldTotal);
+        if (!recordExists || newPct > oldPct) {
+            isNewBest = currentScore > 0;
+            String sql = "INSERT INTO highscores (user_id, deck_id, best_score, total_cards) " + "VALUES (?, ?, ?, ?) " + "ON DUPLICATE KEY UPDATE best_score = ?, total_cards = ?";
+            try (Connection c = DBConnection.getConnection();
+                 PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, deckId);
+                ps.setInt(3, currentScore);
+                ps.setInt(4, totalCards);
+                ps.setInt(5, currentScore);
+                ps.setInt(6, totalCards);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Database error updating best score", e);
+            }
+        }
+
+        int shownPct = isNewBest ? (totalCards == 0 ? 100 : currentScore * 100 / totalCards) : (oldTotal == 0 ? 0 : oldBest * 100 / oldTotal);
 
         return new BestScoreResult(shownPct, isNewBest);
     }
 
     public List<Object[]> getLeaderboard(int deckId) {
         List<Object[]> results = new ArrayList<>();
-        String sql = "SELECT u.id, u.username, u.profile_picture, h.best_score, h.total_cards, h.saved_at " +
-                "FROM highscores h " +
-                "JOIN users u ON h.user_id = u.id " +
-                "WHERE h.deck_id = ? " +
-                "ORDER BY (h.best_score / NULLIF(h.total_cards, 0)) DESC, h.best_score DESC, h.saved_at ASC " +
-                "LIMIT 50";
+        String sql = "SELECT u.id, u.username, u.profile_picture, h.best_score, h.total_cards, h.saved_at " + "FROM highscores h " + "JOIN users u ON h.user_id = u.id " + "WHERE h.deck_id = ? " + "ORDER BY (h.best_score / NULLIF(h.total_cards, 0)) DESC, h.best_score DESC, h.saved_at ASC " + "LIMIT 50";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, deckId);
@@ -254,14 +242,9 @@ public class CardProgressDAO {
     }
 
     public void adjustHighscoresForCardDeletion(int cardId, int deckId) {
-        String sql =
-            "UPDATE highscores h " +
-            "LEFT JOIN card_progress cp " +
-            "  ON cp.card_id = ? AND cp.user_id = h.user_id " +
-            "  AND cp.selected_answer = (SELECT correct_answer FROM cards WHERE id = ?) " +
-            "SET " +
-            "  h.best_score  = GREATEST(0, LEAST(h.best_score - IF(cp.card_id IS NOT NULL, 1, 0), h.total_cards - 1)), " +
-            "  h.total_cards = h.total_cards - 1 " +
+        String sql = "UPDATE highscores h " + "LEFT JOIN card_progress cp " +
+            "  ON cp.card_id = ? AND cp.user_id = h.user_id " + "  AND cp.selected_answer = (SELECT correct_answer FROM cards WHERE id = ?) " + "SET " +
+            "  h.best_score  = GREATEST(0, LEAST(h.best_score - IF(cp.card_id IS NOT NULL, 1, 0), h.total_cards - 1)), " + "  h.total_cards = h.total_cards - 1 " +
             "WHERE h.deck_id = ? AND h.total_cards > 0";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -276,12 +259,7 @@ public class CardProgressDAO {
 
     public void adjustHighscoresForAnswerChange(int cardId, int deckId) {
         String sql =
-            "UPDATE highscores h " +
-            "JOIN card_progress cp " +
-            "  ON cp.card_id = ? AND cp.user_id = h.user_id " +
-            "  AND cp.selected_answer = (SELECT correct_answer FROM cards WHERE id = ?) " +
-            "SET h.best_score = GREATEST(0, h.best_score - 1) " +
-            "WHERE h.deck_id = ?";
+            "UPDATE highscores h " + "JOIN card_progress cp " + "  ON cp.card_id = ? AND cp.user_id = h.user_id " + "  AND cp.selected_answer = (SELECT correct_answer FROM cards WHERE id = ?) " + "SET h.best_score = GREATEST(0, h.best_score - 1) " + "WHERE h.deck_id = ?";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, cardId);

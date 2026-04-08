@@ -102,20 +102,9 @@ public class UserDAO {
     public int recordFailedDeviceAttempt(String deviceId, String username) {
         String upsertSql =
                 "INSERT INTO device_blocks (device_id, username, failed_attempts, last_failed_attempt) " +
-                        "VALUES (?, ?, 1, NOW()) " +
-                        "ON DUPLICATE KEY UPDATE " +
-                        "    failed_attempts = CASE " +
-                        "        WHEN last_failed_attempt IS NULL OR TIMESTAMPDIFF(SECOND, last_failed_attempt, NOW()) > 1800 " +
-                        "        THEN 1 " +
-                        "        ELSE failed_attempts + 1 " +
-                        "    END, " +
-                        "    locked_until = CASE " +
-                        "        WHEN (CASE WHEN last_failed_attempt IS NULL OR TIMESTAMPDIFF(SECOND, last_failed_attempt, NOW()) > 1800 " +
-                        "              THEN 1 ELSE failed_attempts + 1 END) >= 9 " +
-                        "        THEN DATE_ADD(NOW(), INTERVAL 5 MINUTE) " +
-                        "        ELSE NULL " +
-                        "    END, " +
-                        "    last_failed_attempt = NOW()";
+                        "VALUES (?, ?, 1, NOW()) " + "ON DUPLICATE KEY UPDATE " +
+                        "    failed_attempts = CASE " + "        WHEN last_failed_attempt IS NULL OR TIMESTAMPDIFF(SECOND, last_failed_attempt, NOW()) > 1800 " + "        THEN 1 " + "        ELSE failed_attempts + 1 " +
+                        "    END, " + "    locked_until = CASE " + "        WHEN (CASE WHEN last_failed_attempt IS NULL OR TIMESTAMPDIFF(SECOND, last_failed_attempt, NOW()) > 1800 " + "              THEN 1 ELSE failed_attempts + 1 END) >= 9 " + "        THEN DATE_ADD(NOW(), INTERVAL 5 MINUTE) " + "        ELSE NULL " + "    END, " + "    last_failed_attempt = NOW()";
 
         String selectSql = "SELECT failed_attempts FROM device_blocks WHERE device_id = ? AND username = ?";
 
@@ -188,7 +177,7 @@ public class UserDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error retrieving batched profile pictures", e);
+            throw new RuntimeException("Database error getting batched profile pictures", e);
         }
         return avatars;
     }

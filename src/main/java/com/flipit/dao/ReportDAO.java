@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReportDAO {
-
     public boolean submitReport(int deckId, int userId, String reason) {
         String sql = "INSERT INTO deck_reports (deck_id, user_id, reason) VALUES (?, ?, ?)";
         try (Connection c = DBConnection.getConnection();
@@ -39,10 +38,7 @@ public class ReportDAO {
     public List<DeckReport> getPendingReports() {
         List<DeckReport> list = new ArrayList<>();
         String sql = "SELECT r.*, d.title AS deck_title, u.username AS reporter_name " +
-                "FROM deck_reports r " +
-                "JOIN decks d ON r.deck_id = d.id " +
-                "JOIN users u ON r.user_id = u.id " +
-                "WHERE r.status = 'pending' ORDER BY r.created_at ASC";
+                "FROM deck_reports r " + "JOIN decks d ON r.deck_id = d.id " + "JOIN users u ON r.user_id = u.id " + "WHERE r.status = 'pending' ORDER BY r.created_at ASC";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-// TODO: quizpanel font, setup installer
 public class Main {
     public static void main(String[] args) {
         String os = System.getProperty("os.name").toLowerCase();
@@ -66,10 +65,7 @@ public class Main {
                 @Override
                 protected User doInBackground() throws Exception {
                     publish(20);
-
-                    // warm up DB connection pool.
                     new UserDAO().getTotalUsers();
-
                     publish(60);
 
                     User autoUser = null;

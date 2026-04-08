@@ -35,11 +35,7 @@ public class DeckDAO {
     }
 
     public boolean updateDeck(int deckId, String title, String description, boolean isPublic) {
-        String sql = "UPDATE decks SET title=?, description=?, is_public=?, " +
-                "published_at = CASE " +
-                "WHEN ? = TRUE AND published_at IS NULL THEN CURRENT_TIMESTAMP " +
-                "ELSE published_at END " +
-                "WHERE id=?";
+        String sql = "UPDATE decks SET title=?, description=?, is_public=?, " + "published_at = CASE " + "WHEN ? = TRUE AND published_at IS NULL THEN CURRENT_TIMESTAMP " + "ELSE published_at END " + "WHERE id=?";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, title);
@@ -78,7 +74,7 @@ public class DeckDAO {
 
     public List<Deck> getPublicDecks() {
         List<Deck> list = new ArrayList<>();
-        String sql = "SELECT * FROM view_deck_count WHERE is_public = TRUE AND is_disabled = FALSE ORDER BY published_at DESC";
+        String sql = "SELECT * FROM view_deck_details WHERE is_public = TRUE AND is_disabled = FALSE ORDER BY published_at DESC";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -93,7 +89,7 @@ public class DeckDAO {
 
     public List<Deck> getAllSystemDecks() {
         List<Deck> list = new ArrayList<>();
-        String sql = "SELECT * FROM view_deck_count ORDER BY created_at DESC";
+        String sql = "SELECT * FROM view_deck_details ORDER BY created_at DESC";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -108,7 +104,7 @@ public class DeckDAO {
 
     public List<Deck> getAllDecksByUser(int userId) {
         List<Deck> list = new ArrayList<>();
-        String sql = "SELECT * FROM view_deck_count WHERE user_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT * FROM view_deck_details WHERE user_id = ? ORDER BY created_at DESC";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -125,9 +121,7 @@ public class DeckDAO {
 
     public List<Deck> getSavedDecksByUser(int userId) {
         List<Deck> list = new ArrayList<>();
-        String sql = "SELECT v.* FROM view_deck_count v " +
-                "JOIN saved_decks s ON v.id = s.deck_id " +
-                "WHERE s.user_id = ? ORDER BY s.saved_at DESC";
+        String sql = "SELECT v.* FROM view_deck_details v " + "JOIN saved_decks s ON v.id = s.deck_id " + "WHERE s.user_id = ? ORDER BY s.saved_at DESC";
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -213,7 +207,7 @@ public class DeckDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error fetching bulk saved deck IDs", e);
+            throw new RuntimeException("Database error fetching batch saved deck IDs", e);
         }
         return savedSet;
     }
